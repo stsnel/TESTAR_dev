@@ -1,6 +1,7 @@
 /***************************************************************************************************
 *
-* Copyright (c) 2013, 2014, 2015, 2016, 2017 Universitat Politecnica de Valencia - www.upv.es
+* Copyright (c) 2013, 2014, 2015, 2016, 2017, 2019 Universitat Politecnica de Valencia - www.upv.es
+* Copyright (c) 2019 Open Universiteit - www.ou.nl
 *
 * Redistribution and use in source and binary forms, with or without
 * modification, are permitted provided that the following conditions are met:
@@ -35,12 +36,16 @@ package org.fruit.alayer.devices;
 
 import java.awt.AWTException;
 import java.awt.Robot;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.fruit.FruitException;
 
 public final class AWTKeyboard implements Keyboard {
 	public static AWTKeyboard build() throws FruitException{ return new AWTKeyboard(); }
 	private final Robot robot;
+	
+	public static Set<Integer> pressedRobot = new HashSet<>();
 	
 	private AWTKeyboard(){
 		try{
@@ -51,7 +56,10 @@ public final class AWTKeyboard implements Keyboard {
 	}
 	
 	public String toString() { return "AWT Keyboard"; }
-	public void press(KBKeys k) { robot.keyPress(k.code());	}	
+	public void press(KBKeys k) { 
+		pressedRobot.add(k.code());
+		robot.keyPress(k.code());	
+	}	
 	public void release(KBKeys k) { robot.keyRelease(k.code());	}
 
 	public void isPressed(KBKeys k) {

@@ -1,7 +1,7 @@
 /***************************************************************************************************
  *
- * Copyright (c) 2018 Universitat Politecnica de Valencia - www.upv.es
- * Copyright (c) 2018 Open Universiteit - www.ou.nl
+ * Copyright (c) 2018, 2019 Universitat Politecnica de Valencia - www.upv.es
+ * Copyright (c) 2018, 2019 Open Universiteit - www.ou.nl
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -35,11 +35,11 @@ import es.upv.staq.testar.EventHandler;
 import es.upv.staq.testar.FlashFeedback;
 import es.upv.staq.testar.IEventListener;
 import es.upv.staq.testar.serialisation.LogSerialiser;
+
+import org.fruit.alayer.devices.AWTKeyboard;
 import org.fruit.alayer.devices.KBKeys;
 import org.fruit.alayer.devices.MouseButtons;
-import java.util.Arrays;
 import java.util.EnumSet;
-import java.util.List;
 import java.util.Set;
 
 
@@ -96,39 +96,6 @@ public abstract class RuntimeControlsProtocol extends AbstractProtocol implement
     	FlashFeedback.flash(modeNfo, 1000);
     	
     }
-    
-    //Old code to switch between modes
-    /*private synchronized void nextMode(boolean forward){
-        if(forward){
-            switch(mode){
-                case Record:
-                    mode = Modes.Generate; break;
-                case Generate:
-                    mode = Modes.Record; break;
-                default:
-                    break;
-            }
-        }else{
-            switch(mode){
-                case Record:
-                    mode = Modes.Generate; break;
-                case Generate:
-                    mode = Modes.Record; break;
-                default:
-                    break;
-            }
-        }
-
-        // Add some logging
-        // Add the FlashFeedback about the mode you are in in the upper left corner.
-        String modeParamS = "";
-        if (mode == Modes.Record)
-            modeParamS = " (" + settings.get(ConfigTags.TimeToWaitAfterAction) + " wait time between actions)";
-
-        String modeNfo = "'" + mode + "' mode active." + modeParamS;
-        LogSerialiser.log(modeNfo + "\n", LogSerialiser.LogLevel.Info);
-        FlashFeedback.flash(modeNfo);
-    }*/
 
     /**
      * Set the mode with the given parameter value
@@ -137,9 +104,6 @@ public abstract class RuntimeControlsProtocol extends AbstractProtocol implement
     protected synchronized void setMode(Modes mode){
         if (mode() == mode) return;
         else this.mode = mode;
-//        List<Modes> modesList = Arrays.asList(Modes.values());
-//        while (mode() != mode)
-//            nextMode(modesList.indexOf(mode) > modesList.indexOf(mode()));
     }
 
 
@@ -167,86 +131,77 @@ public abstract class RuntimeControlsProtocol extends AbstractProtocol implement
      */
     @Override
     public void keyDown(KBKeys key){
-        pressed.add(key);
 
-        //  SHIFT + SPACE are pressed --> Toggle slow motion test
-        if (pressed.contains(KBKeys.VK_SHIFT) && key == KBKeys.VK_SPACE){
-            if (this.delay == Double.MIN_VALUE){
-                this.delay = settings().get(ConfigTags.TimeToWaitAfterAction).doubleValue();
-                settings().set(ConfigTags.TimeToWaitAfterAction, SLOW_MOTION);
-            } else{
-                settings().set(ConfigTags.TimeToWaitAfterAction, this.delay);
-                delay = Double.MIN_VALUE;
-            }
-        }
+    	if(AWTKeyboard.pressedRobot.contains(key.code()))
+    		AWTKeyboard.pressedRobot.remove(key.code());
 
-            // SHIFT + ARROW-RIGHT --> go to the next mode
-        else if(key == KBKeys.VK_RIGHT && pressed.contains(KBKeys.VK_SHIFT)) {
-            if(mode.equals(Modes.Record) || mode.equals(Modes.Generate))
-            	nextMode();
-        }
+    	else {
 
-            // SHIFT + ARROW-LEFT --> go to the previous mode
-        else if(key == KBKeys.VK_LEFT && pressed.contains(KBKeys.VK_SHIFT)) {
-            if(mode.equals(Modes.Record) || mode.equals(Modes.Generate))
-            	nextMode();
-        }
+    		pressed.add(key);
 
-            // SHIFT + ARROW-DOWN --> stop TESTAR run
-        else if(key == KBKeys.VK_DOWN && pressed.contains(KBKeys.VK_SHIFT)){
-            LogSerialiser.log("User requested to stop monkey!\n", LogSerialiser.LogLevel.Info);
-            mode = Modes.Quit;
-        }
+    		//  SHIFT + SPACE are pressed --> Toggle slow motion test
+    		if (pressed.contains(KBKeys.VK_SHIFT) && key == KBKeys.VK_SPACE){
+    			if (this.delay == Double.MIN_VALUE){
+    				this.delay = settings().get(ConfigTags.TimeToWaitAfterAction).doubleValue();
+    				settings().set(ConfigTags.TimeToWaitAfterAction, SLOW_MOTION);
+    			} else{
+    				settings().set(ConfigTags.TimeToWaitAfterAction, this.delay);
+    				delay = Double.MIN_VALUE;
+    			}
+    		}
 
-        // SHIFT + ARROW-UP --> toggle visualization on / off
-        else if(key == KBKeys.VK_UP && pressed.contains(KBKeys.VK_SHIFT)){
-            if(visualizationOn){
-                visualizationOn = false;
-            }else{
-                visualizationOn = true;
-            }
-        }
+    		// SHIFT + ARROW-RIGHT --> go to the next mode
+    		else if(key == KBKeys.VK_RIGHT && pressed.contains(KBKeys.VK_SHIFT)) {
+    			if(mode.equals(Modes.Record) || mode.equals(Modes.Generate))
+    				nextMode();
+    		}
 
-        //Disabled and replaced with Shift + Arrow Up to toggle visualization on/off:
-//        // SHIFT + 1 --> toggle action visualization
-//        else if(key == KBKeys.VK_1 && pressed.contains(KBKeys.VK_SHIFT))
-//            settings().set(ConfigTags.VisualizeActions, !settings().get(ConfigTags.VisualizeActions));
-//
-//            // SHIFT + 2 --> toggle showing accessibility properties of the widget
-//        else if(key == KBKeys.VK_2 && pressed.contains(KBKeys.VK_SHIFT))
-//            settings().set(ConfigTags.DrawWidgetUnderCursor, !settings().get(ConfigTags.DrawWidgetUnderCursor));
-//
-//            // SHIFT + 3 --> toggle basic or all accessibility properties of the widget
-//        else if(key == KBKeys.VK_3 && pressed.contains(KBKeys.VK_SHIFT))
-//            settings().set(ConfigTags.DrawWidgetInfo, !settings().get(ConfigTags.DrawWidgetInfo));
-//
-//            // SHIFT + 4 --> toggle the widget tree
-//        else if (key == KBKeys.VK_4  && pressed.contains(KBKeys.VK_SHIFT))
-//            settings().set(ConfigTags.DrawWidgetTree, !settings.get(ConfigTags.DrawWidgetTree));
+    		// SHIFT + ARROW-LEFT --> go to the previous mode
+    		else if(key == KBKeys.VK_LEFT && pressed.contains(KBKeys.VK_SHIFT)) {
+    			if(mode.equals(Modes.Record) || mode.equals(Modes.Generate))
+    				nextMode();
+    		}
 
-            // SHIFT + 0 --> undocumented feature
-        else if (key == KBKeys.VK_0  && pressed.contains(KBKeys.VK_SHIFT))
-            System.setProperty("DEBUG_WINDOWS_PROCESS_NAMES","true");
+    		// SHIFT + ARROW-DOWN --> stop TESTAR run
+    		else if(key == KBKeys.VK_DOWN && pressed.contains(KBKeys.VK_SHIFT)){
+    			LogSerialiser.log("User requested to stop monkey!\n", LogSerialiser.LogLevel.Info);
+    			mode = Modes.Quit;
+    		}
 
-            // TODO: Find out if this commented code is anything useful
-		/*else if (key == KBKeys.VK_ENTER && pressed.contains(KBKeys.VK_SHIFT)){
+    		// SHIFT + ARROW-UP --> toggle visualization on / off
+    		else if(key == KBKeys.VK_UP && pressed.contains(KBKeys.VK_SHIFT)){
+    			if(visualizationOn){
+    				visualizationOn = false;
+    			}else{
+    				visualizationOn = true;
+    			}
+    		}
+
+    		// SHIFT + 0 --> undocumented feature
+    		else if (key == KBKeys.VK_0  && pressed.contains(KBKeys.VK_SHIFT))
+    			System.setProperty("DEBUG_WINDOWS_PROCESS_NAMES","true");
+
+    		// TODO: Find out if this commented code is anything useful
+    		/*else if (key == KBKeys.VK_ENTER && pressed.contains(KBKeys.VK_SHIFT)){
 			AdhocServer.startAdhocServer();
 			mode = Modes.AdhocTest;
 			LogSerialiser.log("'" + mode + "' mode active.\n", LogSerialiser.LogLevel.Info);
 		}*/
 
-            // In GenerateManual mode you can press any key except SHIFT to add a user keyboard
-            // This is because SHIFT is used for the TESTAR shortcuts
-            // This is not ideal, because now special characters and capital letters and other events that needs SHIFT
-            // cannot be recorded as an user event in GenerateManual....
-        else if (!pressed.contains(KBKeys.VK_SHIFT) && mode() == Modes.Record && userEvent == null){
-            //System.out.println("USER_EVENT key_down! " + key.toString());
-            userEvent = new Object[]{key}; // would be ideal to set it up at keyUp
-        }
+    		// In GenerateManual mode you can press any key except SHIFT to add a user keyboard
+    		// This is because SHIFT is used for the TESTAR shortcuts
+    		// This is not ideal, because now special characters and capital letters and other events that needs SHIFT
+    		// cannot be recorded as an user event in GenerateManual....
+    		else if (!pressed.contains(KBKeys.VK_SHIFT) && mode() == Modes.Record && userEvent == null){
+    			//System.out.println("USER_EVENT key_down! " + key.toString());
+    			userEvent = new Object[]{key}; // would be ideal to set it up at keyUp
+    		}
 
-        // SHIFT + ALT --> Toggle widget-tree hieracrhy display
-        if (pressed.contains(KBKeys.VK_ALT) && pressed.contains(KBKeys.VK_SHIFT))
-            markParentWidget = !markParentWidget;
+    		// SHIFT + ALT --> Toggle widget-tree hieracrhy display
+    		if (pressed.contains(KBKeys.VK_ALT) && pressed.contains(KBKeys.VK_SHIFT))
+    			markParentWidget = !markParentWidget;
+
+    	}
     }
 
     //jnativehook is platform independent

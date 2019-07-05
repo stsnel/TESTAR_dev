@@ -1,6 +1,7 @@
 /***************************************************************************************************
 *
-* Copyright (c) 2013, 2014, 2015, 2016, 2017 Universitat Politecnica de Valencia - www.upv.es
+* Copyright (c) 2013, 2014, 2015, 2016, 2017, 2019 Universitat Politecnica de Valencia - www.upv.es
+* Copyright (c) 2019 Open Universiteit - www.ou.nl
 *
 * Redistribution and use in source and binary forms, with or without
 * modification, are permitted provided that the following conditions are met:
@@ -44,6 +45,7 @@ import org.fruit.alayer.SUT;
 import org.fruit.alayer.State;
 import org.fruit.alayer.TaggableBase;
 import org.fruit.alayer.Tags;
+import org.fruit.alayer.devices.AWTKeyboard;
 import org.fruit.alayer.devices.KBKeys;
 import org.fruit.alayer.exceptions.ActionFailedException;
 
@@ -89,6 +91,8 @@ public final class Type extends TaggableBase implements Action {
 			if(shift)
 				shiftUp.run(system, state, .0);
 			Util.pause(d);
+			
+			AWTKeyboard.pressedRobot.clear();
 		}
 	}
 		
