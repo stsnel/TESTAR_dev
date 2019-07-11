@@ -1,6 +1,7 @@
 /***************************************************************************************************
 *
-* Copyright (c) 2013, 2014, 2015, 2016, 2017, 2018 Universitat Politecnica de Valencia - www.upv.es
+* Copyright (c) 2013, 2014, 2015, 2016, 2017, 2018, 2019 Universitat Politecnica de Valencia - www.upv.es
+* Copyright (c) 2018, 2019 Open Universiteit - www.ou.nl
 *
 * Redistribution and use in source and binary forms, with or without
 * modification, are permitted provided that the following conditions are met:
@@ -58,9 +59,9 @@ public class Settings extends TaggableBase implements Serializable {
 
 	private static final long serialVersionUID = -1579293663489327737L;
 
-	public static final String SUT_CONNECTOR_WINDOW_TITLE = "SUT_WINDOW_TITLE",
-			 				   SUT_CONNECTOR_PROCESS_NAME = "SUT_PROCESS_NAME",
-			 				   SUT_CONNECTOR_CMDLINE 	  = "COMMAND_LINE";
+	public static final String SUT_CONNECTOR_WINDOW_TITLE = "SUT_WINDOW_TITLE";
+	public static final String SUT_CONNECTOR_PROCESS_NAME = "SUT_PROCESS_NAME";
+	public static final String SUT_CONNECTOR_CMDLINE 	  = "COMMAND_LINE";
 	
 	private static String settingsPath;
 	
@@ -359,7 +360,7 @@ public class Settings extends TaggableBase implements Serializable {
 					+"# but that you do not want to test.\n"
 					+"#################################################################\n"
 					+"\n"
-					+"SUTProcesses =" + Util.lineSep()
+					+"ProcessesToKillDuringTest =" + Util.lineSep()
 					+"\n"
 					+"#################################################################\n"
 					+"# Protocolclass\n"

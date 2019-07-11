@@ -309,7 +309,8 @@ public class DefaultProtocol extends RuntimeControlsProtocol {
 		mode = settings.get(ConfigTags.Mode);
 
 		//EventHandler is implemented in RuntimeControlsProtocol (super class):
-		eventHandler = initializeEventHandler();
+		if (settings.get(ConfigTags.EnableKeyboardEventListener))
+			eventHandler = initializeEventHandler();
 
 		//builder = new UIAStateBuilder(settings.get(ConfigTags.TimeToFreeze));
 		builder = NativeLinker.getNativeStateBuilder(
@@ -330,7 +331,7 @@ public class DefaultProtocol extends RuntimeControlsProtocol {
 		}
 
 		try {
-			if (!settings.get(ConfigTags.UnattendedTests)) {
+			if (settings.get(ConfigTags.EnableKeyboardEventListener) && !settings.get(ConfigTags.UnattendedTests)) {
 				LogSerialiser.log("Registering keyboard and mouse hooks\n", LogSerialiser.LogLevel.Debug);
 				Logger logger = Logger.getLogger(GlobalScreen.class.getPackage().getName());
 				logger.setLevel(Level.OFF);
@@ -1856,7 +1857,7 @@ public class DefaultProtocol extends RuntimeControlsProtocol {
 	private void closeTestarTestSession(){
 		//cleaning the variables started in initialize()
 		try {
-			if (!settings.get(ConfigTags.UnattendedTests)) {
+			if (settings.get(ConfigTags.EnableKeyboardEventListener) && !settings.get(ConfigTags.UnattendedTests)) {
 				if (GlobalScreen.isNativeHookRegistered()) {
 					LogSerialiser.log("Unregistering keyboard and mouse hooks\n", LogSerialiser.LogLevel.Debug);
 					GlobalScreen.removeNativeMouseMotionListener(eventHandler);

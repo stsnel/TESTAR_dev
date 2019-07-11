@@ -45,196 +45,183 @@ import java.util.Set;
 
 public abstract class RuntimeControlsProtocol extends AbstractProtocol implements IEventListener {
 
-    //TODO create a settings to turn off all the runtime controls (for "headless"-mode, for example in continuous integration)
+	protected double delay = Double.MIN_VALUE;
+	protected Object[] userEvent = null;
+	protected boolean markParentWidget = false;
+	protected boolean visualizationOn = false;
 
-    protected double delay = Double.MIN_VALUE;
-    protected Object[] userEvent = null;
-    protected boolean markParentWidget = false;
-    protected boolean visualizationOn = false;
+	public enum Modes{
+		Spy,
+		Record,
+		Generate,
+		Quit,
+		View,
+		Replay;
+	}
 
-    public enum Modes{
-        Spy,
-        Record,
-        Generate,
-        Quit,
-        View,
-        Replay;
-    }
+	protected Modes mode;
+	private Set<KBKeys> pressed = EnumSet.noneOf(KBKeys.class);
 
-    protected Modes mode;
-    private Set<KBKeys> pressed = EnumSet.noneOf(KBKeys.class);
+	public EventHandler initializeEventHandler() {
+		return new EventHandler(this);
+	}
 
-    public EventHandler initializeEventHandler() {
-    	return new EventHandler(this);
-    }
+	/**
+	 * Implement the SHIFT + ARROW-LEFT or SHIFT + ARROW-RIGHT toggling mode feature
+	 * Show the flashfeedback in the upperleft corner of the screen
+	 * @param forward is set in keyDown method
+	 */
+	private synchronized void nextMode() {
+		switch(mode){
+		case Record:
+			mode = Modes.Generate; break;
+		case Generate:
+			mode = Modes.Record; break;
+		default:
+			break;
+		}
 
+		// Add some logging
+		// Add the FlashFeedback about the mode you are in in the upper left corner.
+		String modeParamS = "";
+		if (mode == Modes.Record)
+			modeParamS = " (" + settings.get(ConfigTags.TimeToWaitAfterAction) + " wait time between actions)";
 
-    //TODO think how the modes should be implemented
-    /**
-     * Implement the SHIFT + ARROW-LEFT or SHIFT + ARROW-RIGHT toggling mode feature
-     * Show the flashfeedback in the upperleft corner of the screen
-     * @param forward is set in keyDown method
-     */
-    private synchronized void nextMode() {
-    	switch(mode){
-    	case Record:
-    		mode = Modes.Generate; break;
-    	case Generate:
-    		mode = Modes.Record; break;
-    	default:
-    		break;
-    	}
+		String modeNfo = "'" + mode + "' mode active." + modeParamS;
+		LogSerialiser.log(modeNfo + "\n", LogSerialiser.LogLevel.Info);
+		FlashFeedback.flash(modeNfo, 1000);
 
-    	// Add some logging
-    	// Add the FlashFeedback about the mode you are in in the upper left corner.
-    	String modeParamS = "";
-    	if (mode == Modes.Record)
-    		modeParamS = " (" + settings.get(ConfigTags.TimeToWaitAfterAction) + " wait time between actions)";
+	}
 
-    	String modeNfo = "'" + mode + "' mode active." + modeParamS;
-    	LogSerialiser.log(modeNfo + "\n", LogSerialiser.LogLevel.Info);
-    	FlashFeedback.flash(modeNfo, 1000);
-    	
-    }
-
-    /**
-     * Set the mode with the given parameter value
-     * @param mode
-     */
-    protected synchronized void setMode(Modes mode){
-        if (mode() == mode) return;
-        else this.mode = mode;
-    }
+	/**
+	 * Set the mode with the given parameter value
+	 * @param mode
+	 */
+	protected synchronized void setMode(Modes mode){
+		if (mode() == mode) return;
+		else this.mode = mode;
+	}
 
 
-    /**
-     * Return the mode TESTAR is currently in
-     * @return
-     */
-    public synchronized Modes mode(){ return mode; }
+	/**
+	 * Return the mode TESTAR is currently in
+	 * @return
+	 */
+	public synchronized Modes mode(){ return mode; }
 
-    private final static double SLOW_MOTION = 2.0;
-    //TODO: key commands come through java.awt.event but are the key codes same for all OS? if they are the same, then move to platform independent protocol?
-    //TODO: Investigate better shortcut combinations to control TESTAR that does not interfere with SUT
-    // (e.g. SHIFT + 1 puts an ! in the notepad and hence interferes with SUT state, but the
-    // event is not recorded as a user event).
-    /**
-     * Override the default keylistener to implement the TESTAR shortcuts
-     * SHIFT + SPACE
-     * SHIFT + ARROW-UP
-     * SHIFT + ARROW-RIGHT
-     * SHIFT + ARROW-LEFT
-     * SHIFT + ARROW-DOWN
-     * SHIFT + {0, 1, 2, 3, 4}
-     * SHIFT + ALT
-     * @param key
-     */
-    @Override
-    public void keyDown(KBKeys key){
+	private final static double SLOW_MOTION = 2.0;
+	//TODO: key commands come through java.awt.event but are the key codes same for all OS? if they are the same, then move to platform independent protocol?
+	//TODO: Investigate better shortcut combinations to control TESTAR that does not interfere with SUT
+	// (e.g. SHIFT + 1 puts an ! in the notepad and hence interferes with SUT state, but the
+	// event is not recorded as a user event).
+	/**
+	 * Override the default keylistener to implement the TESTAR shortcuts
+	 * SHIFT + SPACE
+	 * SHIFT + ARROW-UP
+	 * SHIFT + ARROW-RIGHT
+	 * SHIFT + ARROW-LEFT
+	 * SHIFT + ARROW-DOWN
+	 * SHIFT + {0, 1, 2, 3, 4}
+	 * SHIFT + ALT
+	 * @param key
+	 */
+	@Override
+	public void keyDown(KBKeys key){
 
-    	if(AWTKeyboard.pressedRobot.contains(key.code()))
-    		AWTKeyboard.pressedRobot.remove(key.code());
+		if(AWTKeyboard.pressedRobot.contains(key.code()))
+			AWTKeyboard.pressedRobot.remove(key.code());
 
-    	else {
+		else {
 
-    		pressed.add(key);
+			pressed.add(key);
 
-    		//  SHIFT + SPACE are pressed --> Toggle slow motion test
-    		if (pressed.contains(KBKeys.VK_SHIFT) && key == KBKeys.VK_SPACE){
-    			if (this.delay == Double.MIN_VALUE){
-    				this.delay = settings().get(ConfigTags.TimeToWaitAfterAction).doubleValue();
-    				settings().set(ConfigTags.TimeToWaitAfterAction, SLOW_MOTION);
-    			} else{
-    				settings().set(ConfigTags.TimeToWaitAfterAction, this.delay);
-    				delay = Double.MIN_VALUE;
-    			}
-    		}
+			//  SHIFT + SPACE are pressed --> Toggle slow motion test
+			if (pressed.contains(KBKeys.VK_SHIFT) && key == KBKeys.VK_SPACE){
+				if (this.delay == Double.MIN_VALUE){
+					this.delay = settings().get(ConfigTags.TimeToWaitAfterAction).doubleValue();
+					settings().set(ConfigTags.TimeToWaitAfterAction, SLOW_MOTION);
+				} else{
+					settings().set(ConfigTags.TimeToWaitAfterAction, this.delay);
+					delay = Double.MIN_VALUE;
+				}
+			}
 
-    		// SHIFT + ARROW-RIGHT --> go to the next mode
-    		else if(key == KBKeys.VK_RIGHT && pressed.contains(KBKeys.VK_SHIFT)) {
-    			if(mode.equals(Modes.Record) || mode.equals(Modes.Generate))
-    				nextMode();
-    		}
+			// SHIFT + ARROW-RIGHT --> go to the next mode
+			else if(pressed.contains(KBKeys.VK_SHIFT) && key == KBKeys.VK_RIGHT) {
+				if(mode.equals(Modes.Record) || mode.equals(Modes.Generate))
+					nextMode();
+			}
 
-    		// SHIFT + ARROW-LEFT --> go to the previous mode
-    		else if(key == KBKeys.VK_LEFT && pressed.contains(KBKeys.VK_SHIFT)) {
-    			if(mode.equals(Modes.Record) || mode.equals(Modes.Generate))
-    				nextMode();
-    		}
+			// SHIFT + ARROW-LEFT --> go to the previous mode
+			else if(pressed.contains(KBKeys.VK_SHIFT) && key == KBKeys.VK_LEFT) {
+				if(mode.equals(Modes.Record) || mode.equals(Modes.Generate))
+					nextMode();
+			}
 
-    		// SHIFT + ARROW-DOWN --> stop TESTAR run
-    		else if(key == KBKeys.VK_DOWN && pressed.contains(KBKeys.VK_SHIFT)){
-    			LogSerialiser.log("User requested to stop monkey!\n", LogSerialiser.LogLevel.Info);
-    			mode = Modes.Quit;
-    		}
+			// SHIFT + ARROW-DOWN --> stop TESTAR run
+			else if(pressed.contains(KBKeys.VK_SHIFT) && key == KBKeys.VK_DOWN){
+				LogSerialiser.log("User requested to stop TESTAR!\n", LogSerialiser.LogLevel.Info);
+				mode = Modes.Quit;
+			}
 
-    		// SHIFT + ARROW-UP --> toggle visualization on / off
-    		else if(key == KBKeys.VK_UP && pressed.contains(KBKeys.VK_SHIFT)){
-    			if(visualizationOn){
-    				visualizationOn = false;
-    			}else{
-    				visualizationOn = true;
-    			}
-    		}
+			// SHIFT + ARROW-UP --> toggle visualization on / off
+			else if(pressed.contains(KBKeys.VK_SHIFT) && key == KBKeys.VK_UP){
+				if(visualizationOn){
+					visualizationOn = false;
+				}else{
+					visualizationOn = true;
+				}
+			}
 
-    		// SHIFT + 0 --> undocumented feature
-    		else if (key == KBKeys.VK_0  && pressed.contains(KBKeys.VK_SHIFT))
-    			System.setProperty("DEBUG_WINDOWS_PROCESS_NAMES","true");
+			// SHIFT + 0 --> undocumented feature
+			else if (pressed.contains(KBKeys.VK_SHIFT) && key == KBKeys.VK_0)
+				System.setProperty("DEBUG_WINDOWS_PROCESS_NAMES","true");
 
-    		// TODO: Find out if this commented code is anything useful
-    		/*else if (key == KBKeys.VK_ENTER && pressed.contains(KBKeys.VK_SHIFT)){
-			AdhocServer.startAdhocServer();
-			mode = Modes.AdhocTest;
-			LogSerialiser.log("'" + mode + "' mode active.\n", LogSerialiser.LogLevel.Info);
-		}*/
+			// SHIFT + ALT --> Toggle widget-tree hierarchy display
+			else if (pressed.contains(KBKeys.VK_SHIFT) && pressed.contains(KBKeys.VK_ALT))
+				markParentWidget = !markParentWidget;
 
-    		// In GenerateManual mode you can press any key except SHIFT to add a user keyboard
-    		// This is because SHIFT is used for the TESTAR shortcuts
-    		// This is not ideal, because now special characters and capital letters and other events that needs SHIFT
-    		// cannot be recorded as an user event in GenerateManual....
-    		else if (!pressed.contains(KBKeys.VK_SHIFT) && mode() == Modes.Record && userEvent == null){
-    			//System.out.println("USER_EVENT key_down! " + key.toString());
-    			userEvent = new Object[]{key}; // would be ideal to set it up at keyUp
-    		}
+			// In GenerateManual mode you can press any key except SHIFT to add a user keyboard
+			// This is because SHIFT is used for the TESTAR shortcuts
+			// This is not ideal, because now special characters and capital letters and other events that needs SHIFT
+			// cannot be recorded as an user event in GenerateManual....
+			else if (!pressed.contains(KBKeys.VK_SHIFT) && mode() == Modes.Record && userEvent == null){
+				userEvent = new Object[]{key}; // would be ideal to set it up at keyUp
+			}
 
-    		// SHIFT + ALT --> Toggle widget-tree hieracrhy display
-    		if (pressed.contains(KBKeys.VK_ALT) && pressed.contains(KBKeys.VK_SHIFT))
-    			markParentWidget = !markParentWidget;
+		}
+	}
 
-    	}
-    }
+	//jnativehook is platform independent
+	@Override
+	public void keyUp(KBKeys key){
+		pressed.remove(key);
+	}
 
-    //jnativehook is platform independent
-    @Override
-    public void keyUp(KBKeys key){
-        pressed.remove(key);
-    }
+	/**
+	 * TESTAR does not listen to mouse down clicks in any mode
+	 * @param btn
+	 * @param x
+	 * @param y
+	 */
+	@Override
+	public void mouseDown(MouseButtons btn, double x, double y){}
 
-    /**
-     * TESTAR does not listen to mouse down clicks in any mode
-     * @param btn
-     * @param x
-     * @param y
-     */
-    @Override
-    public void mouseDown(MouseButtons btn, double x, double y){}
-
-    /**
-     * In GenerateManual the user can add user events by clicking and the ecent is added when releasing the mouse
-     * @param btn
-     * @param x
-     * @param y
-     */
-    @Override
-    public void mouseUp(MouseButtons btn, double x, double y){
-        // In GenerateManual the user can add user events by clicking
-        if (mode() == Modes.Record && userEvent == null){
-            //System.out.println("USER_EVENT mouse_up!");
-            userEvent = new Object[]{
-                    btn,
-                    new Double(x),
-                    new Double(y)
-            };
-        }
-    }
+	/**
+	 * In GenerateManual the user can add user events by clicking and the ecent is added when releasing the mouse
+	 * @param btn
+	 * @param x
+	 * @param y
+	 */
+	@Override
+	public void mouseUp(MouseButtons btn, double x, double y){
+		// In GenerateManual the user can add user events by clicking
+		if (mode() == Modes.Record && userEvent == null){
+			userEvent = new Object[]{
+					btn,
+					new Double(x),
+					new Double(y)
+			};
+		}
+	}
 }
