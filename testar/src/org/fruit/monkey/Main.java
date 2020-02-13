@@ -1,7 +1,7 @@
 /***************************************************************************************************
  *
- * Copyright (c) 2013, 2014, 2015, 2016, 2017, 2018, 2019 Universitat Politecnica de Valencia - www.upv.es
- * Copyright (c) 2018, 2019 Open Universiteit - www.ou.nl
+ * Copyright (c) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Universitat Politecnica de Valencia - www.upv.es
+ * Copyright (c) 2018, 2019, 2020 Open Universiteit - www.ou.nl
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -413,7 +413,7 @@ public class Main {
 			defaults.add(Pair.from(Delete, new ArrayList<String>()));
 			defaults.add(Pair.from(CopyFromTo, new ArrayList<Pair<String, String>>()));
 			defaults.add(Pair.from(SuspiciousTitles, "(?!x)x"));
-			defaults.add(Pair.from(ClickFilter, "(?!x)x"));
+			defaults.add(Pair.from(WidgetTitleFilter, "(?!x)x"));
 			defaults.add(Pair.from(MyClassPath, Arrays.asList(settingsDir)));
 			defaults.add(Pair.from(ProtocolClass, "org.fruit.monkey.DefaultProtocol"));
 			defaults.add(Pair.from(ForceForeground, true));
@@ -461,6 +461,9 @@ public class Main {
 			defaults.add(Pair.from(ProcessListenerEnabled, false));
 			defaults.add(Pair.from(SuspiciousProcessOutput, "(?!x)x"));
 			defaults.add(Pair.from(ProcessLogs, ".*.*"));
+			defaults.add(Pair.from(LoginUsername, "DefaultUsername"));
+			defaults.add(Pair.from(LoginPassword, "DefaultPassword"));
+			defaults.add(Pair.from(TopWidgetsState, true));
 
 			defaults.add(Pair.from(AbstractStateAttributes, new ArrayList<String>() {
 				{

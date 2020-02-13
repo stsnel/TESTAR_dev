@@ -1832,7 +1832,7 @@ public class DefaultProtocol extends RuntimeControlsProtocol {
 		//If no clickFilterPattern exists, then create it
 		//Get the clickFilterPattern from the regular expression provided by the tester in the Dialog
 		if (this.clickFilterPattern == null)
-			this.clickFilterPattern = Pattern.compile(settings().get(ConfigTags.ClickFilter), Pattern.UNICODE_CHARACTER_CLASS);
+			this.clickFilterPattern = Pattern.compile(settings().get(ConfigTags.WidgetTitleFilter), Pattern.UNICODE_CHARACTER_CLASS);
 
 		//Check whether the title matches any of the clickFilterPatterns
 		Matcher m = this.clickFilterMatchers.get(title);

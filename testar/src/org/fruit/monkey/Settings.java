@@ -1,6 +1,7 @@
 /***************************************************************************************************
 *
-* Copyright (c) 2013, 2014, 2015, 2016, 2017, 2018 Universitat Politecnica de Valencia - www.upv.es
+* Copyright (c) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Universitat Politecnica de Valencia - www.upv.es
+* Copyright (c) 2018, 2019, 2020 Open Universiteit - www.ou.nl
 *
 * Redistribution and use in source and binary forms, with or without
 * modification, are permitted provided that the following conditions are met:
@@ -357,7 +358,7 @@ public class Settings extends TaggableBase implements Serializable {
 					+"# these will be added to the protocol_filter.xml file.\n"
 					+"#################################################################\n"
 					+"\n"
-					+"ClickFilter = " + Util.lineSep()
+					+"WidgetTitleFilter = " + Util.lineSep()
 					+"\n"
 					+"#################################################################\n"
 					+"# Processfilter\n"
@@ -375,6 +376,16 @@ public class Settings extends TaggableBase implements Serializable {
 					+"#################################################################\n"
 					+"\n"
 					+"ProtocolClass = " + Util.lineSep()
+					+"\n"
+					+"#################################################################\n"
+					+"# Java Protocols Setting Values\n"
+					+"#\n"
+					+"# Setting Values used in the Java Protocols for specific configuration.\n"
+					+"#################################################################\n"
+					+"\n"
+					+"LoginUsername = " + Util.lineSep()
+					+"LoginPassword = " + Util.lineSep()
+					+"TopWidgetsState = " + Util.lineSep()
 					+"\n"
 					+"#################################################################\n"
 					+"# Graphdatabase settings (experimental)\n"

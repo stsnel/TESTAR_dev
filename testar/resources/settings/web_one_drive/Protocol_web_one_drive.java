@@ -172,8 +172,9 @@ public class Protocol_web_one_drive extends DesktopProtocol {
 		 * START Option2:
 		 *  Work doing keyboard actions, without check the state and widgets
 		 */
+		
 		new CompoundAction.Builder()   
-		.add(new Type("testarhandson"),0.5).build() //assume keyboard focus is on the user field   
+		.add(new Type(settings.get(ConfigTags.LoginUsername, "testarhandson")),0.5).build() //assume keyboard focus is on the user field   
 		.run(system, null, 0.5);
 
 		kb.press(KBKeys.VK_SHIFT);
@@ -189,7 +190,7 @@ public class Protocol_web_one_drive extends DesktopProtocol {
 		Util.pause(8);
 
 		new CompoundAction.Builder()
-		.add(new Type("0neDrivetestar"),0.5)   
+		.add(new Type(settings.get(ConfigTags.LoginPassword, "0neDrivetestar")),0.5)   
 		.add(new KeyDown(KBKeys.VK_ENTER),0.5).build() //assume login is performed by ENTER 
 		.run(system, null, 1);
 
@@ -322,7 +323,7 @@ public class Protocol_web_one_drive extends DesktopProtocol {
 		//----------------------		
 
 		// iterate through all widgets
-		for(Widget w : state){
+		for(Widget w : (settings.get(ConfigTags.TopWidgetsState, false) ? getTopWidgets(state) : state)) {
 
 			if(w.get(Enabled, true) && !w.get(Blocked, false)){ // only consider enabled and non-blocked widgets
 

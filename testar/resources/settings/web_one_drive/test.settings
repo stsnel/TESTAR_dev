@@ -76,7 +76,7 @@ ProcessLogs = .*.*
 # these will be added to the protocol_filter.xml file.
 #################################################################
 
-ClickFilter = .*[sS]ave.*|.*[gG]uardar.*|.*[fF]ormat.*|.*[fF]ormatear.*|.*[pP]rint.*|.*[iI]mprimir.*|.*[eE]mail.*|.*[fF]ile.*|.*[aA]rchivo.*|.*[mM]inimize.*|.*[mM]inimizar.*|.*[dD]isconnect.*|.*[dD]esconectar.*
+WidgetTitleFilter = .*[sS]ave.*|.*[gG]uardar.*|.*[fF]ormat.*|.*[fF]ormatear.*|.*[pP]rint.*|.*[iI]mprimir.*|.*[eE]mail.*|.*[fF]ile.*|.*[aA]rchivo.*|.*[mM]inimize.*|.*[mM]inimizar.*|.*[dD]isconnect.*|.*[dD]esconectar.*
 
 #################################################################
 # Processfilter
@@ -94,6 +94,16 @@ SUTProcesses =
 #################################################################
 
 ProtocolClass = web_one_drive/Protocol_web_one_drive
+
+#################################################################
+# Java Protocols Setting Values
+#
+# Setting Values used in the Java Protocols for specific configuration.
+#################################################################
+
+LoginUsername = username
+LoginPassword = password
+TopWidgetsState = true
 
 #################################################################
 # Graphdatabase settings (experimental)
