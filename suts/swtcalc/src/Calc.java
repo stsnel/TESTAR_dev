@@ -63,13 +63,16 @@ public class Calc {
 		MenuItem6.setText("Paste");
 
 
-		//hide an easter egg
+		//NullpointerException - process output - Catch and print error
 		MenuItem5.addSelectionListener(new SelectionAdapter(){
-			public void widgetSelected(SelectionEvent e){
-				MessageBox mb = new MessageBox(Calculator, SWT.ICON_ERROR);
-				mb.setText("Oh oh oh");
-				mb.setMessage("Found an issue!");
-				mb.open();
+			public void widgetSelected(SelectionEvent event){
+				try {
+					MessageBox mb = null;
+					mb.setText("null");
+					mb.open();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 			}
 		});
 
@@ -130,7 +133,7 @@ public class Calc {
 
 
 
-		//NullpointerException
+		//NullpointerException - process output and crash application
 		MenuItem10.addSelectionListener(new SelectionAdapter(){
 			public void widgetSelected(SelectionEvent e){
 				MessageBox mb = null;
