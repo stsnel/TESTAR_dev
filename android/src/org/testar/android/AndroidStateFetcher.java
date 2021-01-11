@@ -30,6 +30,7 @@
 
 package org.testar.android;
 
+import java.awt.Dimension;
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
 
@@ -40,10 +41,7 @@ import org.fruit.alayer.SUT;
 import org.fruit.alayer.Tags;
 import org.fruit.alayer.Widget;
 import org.fruit.alayer.exceptions.StateBuildException;
-import org.fruit.alayer.windows.Windows;
 import org.openqa.selenium.By;
-import org.testar.android.emulator.AndroidEmulatorFetcher;
-import org.testar.android.emulator.WindowsInitializer;
 import org.testar.android.util.AndroidNodeParser;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -53,16 +51,11 @@ import io.appium.java_client.MobileElement;
 public class AndroidStateFetcher implements Callable<AndroidState> {
 
 	private final SUT system;
-	private final AndroidEmulatorFetcher windowsEmulator;
-	private final WindowsInitializer windowsInitializer;
+	
+	private Rect biggestRect = Rect.from(0, 0, 0, 0);
 
 	public AndroidStateFetcher(SUT system) {
 		this.system = system;
-		this.windowsInitializer = new WindowsInitializer();
-		this.windowsEmulator = new AndroidEmulatorFetcher(
-				system,
-				windowsInitializer.getAutomationPointer(),
-				windowsInitializer.getCacheRequestPointer());
 	}
 
 	public static AndroidRootElement buildRoot(SUT system) throws StateBuildException {
@@ -70,14 +63,13 @@ public class AndroidStateFetcher implements Callable<AndroidState> {
 		androidroot.isRunning = system.isRunning();
 		androidroot.timeStamp = System.currentTimeMillis();
 		androidroot.pid = (long)-1;
-		androidroot.isForeground = false; //TODO: Windows Emulator + android process
+		androidroot.isForeground = false; //TODO: android process
 
 		return androidroot;
 	}
 
 	@Override
 	public AndroidState call() throws Exception {
-		Windows.CoInitializeEx(0, Windows.COINIT_MULTITHREADED);
 		
 		AndroidRootElement rootElement = buildAndroidSkeleton(system);
 
@@ -97,8 +89,6 @@ public class AndroidStateFetcher implements Callable<AndroidState> {
 		    w.set(Tags.Path, Util.indexString(w));
 		}
 
-		Windows.CoUninitialize();
-
 		return root;
 	}
 
@@ -109,59 +99,44 @@ public class AndroidStateFetcher implements Callable<AndroidState> {
 			return rootElement;
 
 		rootElement.pid = system.get(Tags.PID, (long)-1);
-
-		// Windows API level
-		for(long windowHandle : windowsEmulator.getVisibleTopLevelWindowHandles()) {
-			String windowUIAName = Windows.GetProcessNameFromHWND(windowHandle);
-			if(windowUIAName.contains("qemu-system")) {
-				rootElement.windowsHandle = windowHandle;
-				system.set(Tags.HWND, windowHandle);
-				break;
-			}
-		}
-
-		Rect emulatorRect = windowsEmulator.windowsEmulatorInternalPanel(system.get(Tags.HWND, (long) -1));
-		rootElement.rect = emulatorRect;
-		rootElement.bounds = emulatorRect;
 		
-		rootElement.text = "Windows Emulator Panel";
-		rootElement.className = "Windows Emulator Panel";
+		// 1 Option Screen: Screen size as State Rect
+		//Dimension screen = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
+		//rootElement.rect = Rect.from(0, 0, screen.getWidth(), screen.getHeight());
+		//rootElement.bounds = Rect.from(0, 0, screen.getWidth(), screen.getHeight());
+		
 
-		rootElement.ignore = false;
-		rootElement.enabled = true;
-		rootElement.blocked = false;
-		rootElement.zindex = 0;
+		// 2 Option FrameLayout: Obtain specific internal Android FrameLayout as State Rect
+		/*try {
+		    MobileElement mainFrame = AppiumFramework.findElements(new By.ByClassName("android.widget.FrameLayout")).get(0);
+
+		    rootElement.rect = Rect.from(
+		            mainFrame.getRect().getX(),
+		            mainFrame.getRect().getY(),
+		            mainFrame.getRect().getWidth(),
+		            mainFrame.getRect().getHeight());
+
+		    rootElement.bounds = Rect.from(
+		            mainFrame.getRect().getX(),
+		            mainFrame.getRect().getY(),
+		            mainFrame.getRect().getWidth(),
+		            mainFrame.getRect().getHeight());
+
+		} catch(Exception e) {
+		    System.out.println("Error: findElements(new By.ByClassName(\"android.widget.FrameLayout\")");
+		}
+		*/
 
 		Document xmlAndroid;
 		if((xmlAndroid = AppiumFramework.getAndroidPageSource()) != null) {
 
-			Node stateNode = xmlAndroid.getDocumentElement();
+		    Node stateNode = xmlAndroid.getDocumentElement();
 
-			/*
-			 * Obtain internal Android DrawerLayout
-			 * 
-			 * Because we are using Windows UIA to obtain internal Emulator sub panel
-			 * We don't need to use this implementation right now
-			 * 
-			 * try {
-			MobileElement mainFrame = AppiumFramework.findElements(new By.ByClassName("androidx.drawerlayout.widget.DrawerLayout")).get(0);
+		    // 3 Option mainNode: state node element seems to have empty bounds
+		    //rootElement.rect = androidBoundsRect(AndroidNodeParser.getStringAttribute(stateNode, "bounds"));
+		    //rootElement.bounds = androidBoundsRect(AndroidNodeParser.getStringAttribute(stateNode, "bounds"));
 
-			rootElement.rect = Rect.from(
-					emulatorRect.x() + mainFrame.getRect().getX(),
-					emulatorRect.y() + mainFrame.getRect().getY(),
-					mainFrame.getRect().getWidth(),
-					mainFrame.getRect().getHeight());
-
-			rootElement.bounds = Rect.from(
-					emulatorRect.x() + mainFrame.getRect().getX(),
-					emulatorRect.y() + mainFrame.getRect().getY(),
-					mainFrame.getRect().getWidth(),
-					mainFrame.getRect().getHeight());
-
-			}catch(Exception e) {}
-			 */
-
-			if(stateNode.hasChildNodes()) {
+		    if(stateNode.hasChildNodes()) {
 				int childNum = stateNode.getChildNodes().getLength();
 				rootElement.children = new ArrayList<AndroidElement>(childNum);
 
@@ -171,6 +146,18 @@ public class AndroidStateFetcher implements Callable<AndroidState> {
 			}
 
 		}
+
+		// 4 Option biggest Rect: after check widget tree, use biggest Rect as State Rect
+		rootElement.rect = biggestRect;
+		rootElement.bounds = biggestRect;
+
+		rootElement.text = "Root";
+		rootElement.className = "Root";
+
+        rootElement.ignore = false;
+        rootElement.enabled = true;
+        rootElement.blocked = false;
+        rootElement.zindex = 0;
 
 		buildTLCMap(rootElement);
 
@@ -201,8 +188,13 @@ public class AndroidStateFetcher implements Callable<AndroidState> {
 		childElement.password = AndroidNodeParser.getBooleanAttribute(xmlNode, "password");
 		childElement.selected = AndroidNodeParser.getBooleanAttribute(xmlNode, "selected");
 
-		childElement.rect = androidBoundsRect(childElement.root.rect, AndroidNodeParser.getStringAttribute(xmlNode, "bounds"));
-		childElement.bounds = androidBoundsRect(childElement.root.rect, AndroidNodeParser.getStringAttribute(xmlNode, "bounds"));
+		childElement.rect = androidBoundsRect(AndroidNodeParser.getStringAttribute(xmlNode, "bounds"));
+		childElement.bounds = androidBoundsRect(AndroidNodeParser.getStringAttribute(xmlNode, "bounds"));
+		
+		// TODO: Check a better way to create State Rect?
+		if(!Rect.contains(biggestRect, childElement.rect)) {
+		    biggestRect = childElement.rect;
+		}
 
 		if(xmlNode.hasChildNodes()) {
 			int childNum = xmlNode.getChildNodes().getLength();
@@ -255,40 +247,39 @@ public class AndroidStateFetcher implements Callable<AndroidState> {
 	}
 
 	/**
-	 * Create a Rect with Android Elements bounds and rootRect bounds
+	 * Create a Rect of Android Elements bounds
 	 * 
 	 * Android bounds [24,182][96,254]
 	 * 
 	 * From X1 (24) to X2 (96)
 	 * From Y1 (182) to Y2 (254)
 	 * 
-	 * @param rootRect
 	 * @param bounds
 	 * @return
 	 */
-	private Rect androidBoundsRect(Rect rootRect, String bounds) {
-		String x1 = "0";
-		String y1 = "0";
-		String x2 = "0";
-		String y2 = "0";
+	private Rect androidBoundsRect(String bounds) {
+	    String x1 = "0";
+	    String y1 = "0";
+	    String x2 = "0";
+	    String y2 = "0";
 
-		try {
-			x1 = bounds.substring(bounds.indexOf("[")+1, bounds.indexOf(","));
-			y1 = bounds.substring(bounds.indexOf(",")+1, bounds.indexOf("]"));
+	    try {
+	        x1 = bounds.substring(bounds.indexOf("[")+1, bounds.indexOf(","));
+	        y1 = bounds.substring(bounds.indexOf(",")+1, bounds.indexOf("]"));
 
-			bounds = bounds.substring(bounds.lastIndexOf("["), bounds.lastIndexOf("]")+1);
+	        bounds = bounds.substring(bounds.lastIndexOf("["), bounds.lastIndexOf("]")+1);
 
-			x2 = bounds.substring(bounds.indexOf("[")+1, bounds.indexOf(","));
-			y2 = bounds.substring(bounds.indexOf(",")+1, bounds.indexOf("]"));
-		} catch(Exception e) {
-			return Rect.from(0, 0, 0, 0);
-		}
-		
-		double x = Double.parseDouble(x1) + rootRect.x();
-		double y = Double.parseDouble(y1) + rootRect.y();
-		double width = Double.parseDouble(x2) - Double.parseDouble(x1);
-		double height = Double.parseDouble(y2) - Double.parseDouble(y1);
+	        x2 = bounds.substring(bounds.indexOf("[")+1, bounds.indexOf(","));
+	        y2 = bounds.substring(bounds.indexOf(",")+1, bounds.indexOf("]"));
 
-		return Rect.from(x, y, width, height);
+	        double x = Double.parseDouble(x1);
+	        double y = Double.parseDouble(y1);
+	        double width = Double.parseDouble(x2) - Double.parseDouble(x1);
+	        double height = Double.parseDouble(y2) - Double.parseDouble(y1);
+
+	        return Rect.from(x, y, width, height);
+	    } catch(Exception e) {}
+
+	    return Rect.from(0, 0, 0, 0);
 	}
 }
