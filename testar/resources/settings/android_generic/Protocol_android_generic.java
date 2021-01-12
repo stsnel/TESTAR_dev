@@ -28,7 +28,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************************************/
 
-
 import java.util.Set;
 
 import org.fruit.alayer.*;
@@ -36,31 +35,13 @@ import org.fruit.alayer.actions.AnnotatingActionCompiler;
 import org.fruit.alayer.actions.StdActionCompiler;
 import org.fruit.alayer.exceptions.*;
 import org.fruit.monkey.ConfigTags;
-import org.fruit.monkey.Settings;
-import org.testar.android.AndroidProtocolUtil;
+import org.fruit.monkey.RuntimeControlsProtocol.Modes;
 import org.testar.android.actions.*;
 import org.testar.android.enums.AndroidTags;
-import org.testar.protocols.DesktopProtocol;
-
-import es.upv.staq.testar.NativeLinker;
-
-import org.openqa.selenium.By;
-import org.openqa.selenium.remote.DesiredCapabilities;
+import org.testar.protocols.AndroidProtocol;
 
 
-public class Protocol_android_generic extends DesktopProtocol {
-
-	/**
-	 * Called once during the life time of TESTAR
-	 * This method can be used to perform initial setup work
-	 * @param   settings  the current TESTAR settings as specified by the user.
-	 */
-	@Override
-	protected void initialize(Settings settings){
-		//TODO: Create AndroidProtocol and move OS initialization
-		NativeLinker.addAndroidOS();
-		super.initialize(settings);
-	}
+public class Protocol_android_generic extends AndroidProtocol {
 	
 	/**
 	 * This method is invoked each time the TESTAR starts the SUT to generate a new sequence.
@@ -80,7 +61,26 @@ public class Protocol_android_generic extends DesktopProtocol {
 	 		}
 	 	}
 	}
-	
+
+	 /**
+	  * This method is called when the TESTAR requests the state of the SUT.
+	  * Here you can add additional information to the SUT's state or write your
+	  * own state fetching routine. The state should have attached an oracle
+	  * (TagName: <code>Tags.OracleVerdict</code>) which describes whether the
+	  * state is erroneous and if so why.
+	  * @return  the current state of the SUT with attached oracle.
+	  */
+	 @Override
+	 protected State getState(SUT system) throws StateBuildException {
+	     State state = super.getState(system);
+	     /*for (Widget w : state) {
+	         System.out.println("Widget Title : " + w.get(Tags.Title, "EmptyTitle"));
+	         System.out.println("Widget Shape : " + w.get(Tags.Shape));
+	         System.out.println("Widget Path : " + w.get(Tags.Path));
+	     }*/
+	     return state;
+	 }
+
 	/**
 	 * The getVerdict methods implements the online state oracles that
 	 * examine the SUT's current state and returns an oracle verdict.
@@ -93,14 +93,7 @@ public class Protocol_android_generic extends DesktopProtocol {
 		// non-responsiveness
 		// suspicious titles
 		Verdict verdict = super.getVerdict(state);
-
 		
-		for(Widget w : state) {
-			if(w.get(AndroidTags.AndroidText, "").toLowerCase().contains("error")
-					|| w.get(AndroidTags.AndroidText, "").toLowerCase().contains("exception")) {
-				return (new Verdict(Verdict.SEVERITY_SUSPICIOUS_TITLE, w.get(AndroidTags.AndroidText, "")));
-			}
-		}
 		//--------------------------------------------------------
 		// MORE SOPHISTICATED STATE ORACLES CAN BE PROGRAMMED HERE
 		//--------------------------------------------------------
@@ -132,15 +125,6 @@ public class Protocol_android_generic extends DesktopProtocol {
 
 		// iterate through all widgets
 		for (Widget widget : state) {
-			// only consider enabled and non-tabu widgets
-			/*if (!widget.get(Tags.Enabled, true) || blackListed(widget)) {
-				continue;
-			}*/
-
-			// If the element is blocked, Testar can't click on or type in the widget
-			/*if (widget.get(Tags.Blocked, false)) {
-				continue;
-			}*/
 
 			// type into text boxes
 			if (isTypeable(widget) && (whiteListed(widget) || isUnfiltered(widget))) {
@@ -159,29 +143,8 @@ public class Protocol_android_generic extends DesktopProtocol {
 						widget.get(AndroidTags.AndroidResourceId,""))
 						);
 			}
-			
-			// Spy mode debugging purposes
-			//actions.add(ac.leftClickAt(widget));
 		}
 
 		return actions;
-	}
-	
-	@Override
-	protected boolean isClickable(Widget w) {
-		return (w.get(AndroidTags.AndroidClassName, "").equals("android.widget.ImageButton")
-		|| w.get(AndroidTags.AndroidClassName, "").equals("android.widget.Button"));
-	}
-	
-	@Override
-	protected boolean isTypeable(Widget w) {
-		return (w.get(AndroidTags.AndroidClassName, "").equals("android.widget.EditText"));
-	}
-
-	@Override
-	protected void closeTestSession() {
-		super.closeTestSession();
-		//TODO: Create AndroidProtocol and move OS finalization
-		NativeLinker.cleanAndroidOS();
 	}
 }

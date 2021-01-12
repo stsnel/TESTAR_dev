@@ -35,153 +35,123 @@ import org.fruit.alayer.*;
 import org.fruit.alayer.actions.AnnotatingActionCompiler;
 import org.fruit.alayer.actions.StdActionCompiler;
 import org.fruit.alayer.exceptions.*;
-import org.fruit.monkey.ConfigTags;
-import org.fruit.monkey.Settings;
 import org.testar.ios.actions.IOSActionClick;
 import org.testar.ios.actions.IOSActionType;
 import org.testar.ios.enums.IOSTags;
-import org.testar.protocols.DesktopProtocol;
-
-import es.upv.staq.testar.NativeLinker;
-
-import org.openqa.selenium.By;
-import org.openqa.selenium.remote.DesiredCapabilities;
+import org.testar.protocols.IOSProtocol;
 
 
-public class Protocol_ios_generic extends DesktopProtocol {
+public class Protocol_ios_generic extends IOSProtocol {
 
-	/**
-	 * Called once during the life time of TESTAR
-	 * This method can be used to perform initial setup work
-	 * @param   settings  the current TESTAR settings as specified by the user.
-	 */
-	@Override
-	protected void initialize(Settings settings){
-		//TODO: Create IOSProtocol and move OS initialization
-		NativeLinker.addIOS();
-		super.initialize(settings);
-	}
-	
-	/**
-	 * This method is invoked each time the TESTAR starts the SUT to generate a new sequence.
-	 * This can be used for example for bypassing a login screen by filling the username and password
-	 * or bringing the system into a specific start state which is identical on each start (e.g. one has to delete or restore
-	 * the SUT's configuration files etc.)
-	 */
-	 @Override
-	protected void beginSequence(SUT system, State state){
-	 	super.beginSequence(system, state);
-	 	
-	 	// IOS Action Type example
-	 	for(Widget w : state) {
-	 		if(w.get(IOSTags.iosClassName, "").equals("IOS.widget.EditText")) {
-	 			Action iosType = new IOSActionType(state, w, "TypeExample", w.get(IOSTags.iosResourceId,""));
-	 			iosType.run(system, state, 1.0);
-	 		}
-	 	}
-	}
-	
-	/**
-	 * The getVerdict methods implements the online state oracles that
-	 * examine the SUT's current state and returns an oracle verdict.
-	 * @return oracle verdict, which determines whether the state is erroneous and why.
-	 */
-	@Override
-	protected Verdict getVerdict(State state){
-		// The super methods implements the implicit online state oracles for:
-		// system crashes
-		// non-responsiveness
-		// suspicious titles
-		Verdict verdict = super.getVerdict(state);
+    /**
+     * This method is invoked each time the TESTAR starts the SUT to generate a new sequence.
+     * This can be used for example for bypassing a login screen by filling the username and password
+     * or bringing the system into a specific start state which is identical on each start (e.g. one has to delete or restore
+     * the SUT's configuration files etc.)
+     */
+    @Override
+    protected void beginSequence(SUT system, State state){
+        super.beginSequence(system, state);
 
-		// If Tags.Title is properly mapped, we don't need this
-		for(Widget w : state) {
-			if(w.get(IOSTags.iosText, "").toLowerCase().contains("error")
-					|| w.get(IOSTags.iosText, "").toLowerCase().contains("exception")) {
-				return (new Verdict(Verdict.SEVERITY_SUSPICIOUS_TITLE, w.get(IOSTags.iosText, "")));
-			}
-		}
-		//--------------------------------------------------------
-		// MORE SOPHISTICATED STATE ORACLES CAN BE PROGRAMMED HERE
-		//--------------------------------------------------------
+        // IOS Action Type example
+        for(Widget w : state) {
+            if(w.get(IOSTags.iosClassName, "").equals("ios.widget.EditText")) {
+                Action iosType = new IOSActionType(state, w, "TypeExample", w.get(IOSTags.iosResourceId,""));
+                iosType.run(system, state, 1.0);
+            }
+        }
+    }
 
-		return verdict;
-	}
+    /**
+     * This method is called when the TESTAR requests the state of the SUT.
+     * Here you can add additional information to the SUT's state or write your
+     * own state fetching routine. The state should have attached an oracle
+     * (TagName: <code>Tags.OracleVerdict</code>) which describes whether the
+     * state is erroneous and if so why.
+     * @return  the current state of the SUT with attached oracle.
+     */
+    @Override
+    protected State getState(SUT system) throws StateBuildException {
+        State state = super.getState(system);
+        /*for (Widget w : state) {
+            System.out.println("Widget Title : " + w.get(Tags.Title, "EmptyTitle"));
+            System.out.println("Widget Shape : " + w.get(Tags.Shape));
+            System.out.println("Widget Path : " + w.get(Tags.Path));
+        }*/
+        return state;
+    }
 
-	/**
-	 * This method is used by TESTAR to determine the set of currently available actions.
-	 * You can use the SUT's current state, analyze the widgets and their properties to create
-	 * a set of sensible actions, such as: "Click every Button which is enabled" etc.
-	 * The return value is supposed to be non-null. If the returned set is empty, TESTAR
-	 * will stop generation of the current action and continue with the next one.
-	 * @param system the SUT
-	 * @param state the SUT's current state
-	 * @return  a set of actions
-	 */
-	@Override
-	protected Set<Action> deriveActions(SUT system, State state) throws ActionBuildException{
+    /**
+     * The getVerdict methods implements the online state oracles that
+     * examine the SUT's current state and returns an oracle verdict.
+     * @return oracle verdict, which determines whether the state is erroneous and why.
+     */
+    @Override
+    protected Verdict getVerdict(State state){
+        // The super methods implements the implicit online state oracles for:
+        // system crashes
+        // non-responsiveness
+        // suspicious titles
+        Verdict verdict = super.getVerdict(state);
 
-		//The super method returns a ONLY actions for killing unwanted processes if needed, or bringing the SUT to
-		//the foreground. You should add all other actions here yourself.
-		// These "special" actions are prioritized over the normal GUI actions in selectAction() / preSelectAction().
-		Set<Action> actions = super.deriveActions(system,state);
+        // If Tags.Title is properly mapped, we don't need this
+        for(Widget w : state) {
+            if(w.get(IOSTags.iosText, "").toLowerCase().contains("error")
+                    || w.get(IOSTags.iosText, "").toLowerCase().contains("exception")) {
+                return (new Verdict(Verdict.SEVERITY_SUSPICIOUS_TITLE, w.get(IOSTags.iosText, "")));
+            }
+        }
+        //--------------------------------------------------------
+        // MORE SOPHISTICATED STATE ORACLES CAN BE PROGRAMMED HERE
+        //--------------------------------------------------------
 
-		// create an action compiler, which helps us create actions
-		// such as clicks, drag&drop, typing ...
-		StdActionCompiler ac = new AnnotatingActionCompiler();
+        return verdict;
+    }
 
-		// iterate through all widgets
-		for (Widget widget : state) {
-			// only consider enabled and non-tabu widgets
-			/*if (!widget.get(Tags.Enabled, true) || blackListed(widget)) {
-				continue;
-			}*/
+    /**
+     * This method is used by TESTAR to determine the set of currently available actions.
+     * You can use the SUT's current state, analyze the widgets and their properties to create
+     * a set of sensible actions, such as: "Click every Button which is enabled" etc.
+     * The return value is supposed to be non-null. If the returned set is empty, TESTAR
+     * will stop generation of the current action and continue with the next one.
+     * @param system the SUT
+     * @param state the SUT's current state
+     * @return  a set of actions
+     */
+    @Override
+    protected Set<Action> deriveActions(SUT system, State state) throws ActionBuildException{
 
-			// If the element is blocked, Testar can't click on or type in the widget
-			/*if (widget.get(Tags.Blocked, false)) {
-				continue;
-			}*/
+        //The super method returns a ONLY actions for killing unwanted processes if needed, or bringing the SUT to
+        //the foreground. You should add all other actions here yourself.
+        // These "special" actions are prioritized over the normal GUI actions in selectAction() / preSelectAction().
+        Set<Action> actions = super.deriveActions(system,state);
 
-			// type into text boxes
-			if (isTypeable(widget) && (whiteListed(widget) || isUnfiltered(widget))) {
-				actions.add(
-						new IOSActionType(state, widget,
-						this.getRandomText(widget),
-						widget.get(IOSTags.iosResourceId,""))
-						);
-			}
+        // create an action compiler, which helps us create actions
+        // such as clicks, drag&drop, typing ...
+        StdActionCompiler ac = new AnnotatingActionCompiler();
 
-			// left clicks, but ignore links outside domain
-			if (isClickable(widget)/* && (whiteListed(widget) || isUnfiltered(widget))*/) {
-				actions.add(
-						new IOSActionClick(state, widget,
-						widget.get(IOSTags.iosText,""), 
-						widget.get(IOSTags.iosResourceId,""))
-						);
-			}
-			
-			// Spy mode debugging purposes
-			//actions.add(ac.leftClickAt(widget));
-		}
+        // iterate through all widgets
+        for (Widget widget : state) {
 
-		return actions;
-	}
-	
-	@Override
-	protected boolean isClickable(Widget w) {
-		return (w.get(IOSTags.iosClassName, "").equals("IOS.widget.ImageButton")
-		|| w.get(IOSTags.iosClassName, "").equals("IOS.widget.Button"));
-	}
-	
-	@Override
-	protected boolean isTypeable(Widget w) {
-		return (w.get(IOSTags.iosClassName, "").equals("IOS.widget.EditText"));
-	}
+            // type into text boxes
+            if (isTypeable(widget) && (whiteListed(widget) || isUnfiltered(widget))) {
+                actions.add(
+                        new IOSActionType(state, widget,
+                                this.getRandomText(widget),
+                                widget.get(IOSTags.iosResourceId,""))
+                        );
+            }
 
-	@Override
-	protected void closeTestSession() {
-		super.closeTestSession();
-		//TODO: Create IOSProtocol and move OS finalization
-		NativeLinker.cleanIOS();
-	}
+            // left clicks, but ignore links outside domain
+            if (isClickable(widget)/* && (whiteListed(widget) || isUnfiltered(widget))*/) {
+                actions.add(
+                        new IOSActionClick(state, widget,
+                                widget.get(IOSTags.iosText,""), 
+                                widget.get(IOSTags.iosResourceId,""))
+                        );
+            }
+        }
+
+        return actions;
+    }
 }

@@ -42,6 +42,7 @@ import org.fruit.alayer.webdriver.enums.WdRoles;
 import org.fruit.alayer.webdriver.enums.WdTags;
 import org.fruit.alayer.windows.*;
 import org.testar.android.AndroidAppiumFramework;
+import org.testar.android.AndroidCanvas;
 import org.testar.android.AndroidStateBuilder;
 import org.testar.android.enums.AndroidRoles;
 import org.testar.ios.IOSAppiumFramework;
@@ -164,8 +165,7 @@ public class NativeLinker {
 			return new WdCanvas(pen);
 		}
 		if (PLATFORM_OS.contains(OperatingSystems.ANDROID)) {
-			//return new AndroidCanvas(pen);
-			return GDIScreenCanvas.fromPrimaryMonitor(pen);
+			return new AndroidCanvas(pen);
 		}
 		if (PLATFORM_OS.contains(OperatingSystems.IOS)) {
 		    return new IOSCanvas(pen);
