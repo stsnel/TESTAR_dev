@@ -66,13 +66,13 @@ import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.android.nativekey.AndroidKey;
 import io.appium.java_client.android.nativekey.KeyEvent;
 
-public class AppiumFramework extends SUTBase {
+public class AndroidAppiumFramework extends SUTBase {
 
-	public static AppiumFramework androidSUT = null;
+	public static AndroidAppiumFramework androidSUT = null;
 
 	private static AndroidDriver<MobileElement> driver = null;
 
-	public AppiumFramework(DesiredCapabilities cap) {
+	public AndroidAppiumFramework(DesiredCapabilities cap) {
 
 		try {
 			driver = new AndroidDriver<>(new URL("http://127.0.0.1:4723/wd/hub"), cap);
@@ -82,14 +82,14 @@ public class AppiumFramework extends SUTBase {
 		}
 	}
 
-	public static AppiumFramework fromCapabilities(String capabilitesJsonFile) {
+	public static AndroidAppiumFramework fromCapabilities(String capabilitesJsonFile) {
 		if (androidSUT != null) {
 			androidSUT.stop();
 		}
 
 		DesiredCapabilities cap = createCapabilitiesFromJsonFile(capabilitesJsonFile);
 
-		return new AppiumFramework(cap);
+		return new AndroidAppiumFramework(cap);
 	}
 
 	public static List<MobileElement> findElements(By by){

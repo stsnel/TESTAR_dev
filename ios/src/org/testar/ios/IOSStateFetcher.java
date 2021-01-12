@@ -28,9 +28,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************************************/
 
-package org.testar.android;
+package org.testar.ios;
 
-import java.awt.Dimension;
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
 
@@ -41,46 +40,43 @@ import org.fruit.alayer.SUT;
 import org.fruit.alayer.Tags;
 import org.fruit.alayer.Widget;
 import org.fruit.alayer.exceptions.StateBuildException;
-import org.openqa.selenium.By;
-import org.testar.android.util.AndroidNodeParser;
+import org.testar.ios.util.IOSNodeParser;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
-import io.appium.java_client.MobileElement;
-
-public class AndroidStateFetcher implements Callable<AndroidState> {
+public class IOSStateFetcher implements Callable<IOSState> {
 
 	private final SUT system;
 	
 	private Rect biggestRect = Rect.from(0, 0, 0, 0);
 
-	public AndroidStateFetcher(SUT system) {
+	public IOSStateFetcher(SUT system) {
 		this.system = system;
 	}
 
-	public static AndroidRootElement buildRoot(SUT system) throws StateBuildException {
-		AndroidRootElement androidroot = new AndroidRootElement();
-		androidroot.isRunning = system.isRunning();
-		androidroot.timeStamp = System.currentTimeMillis();
-		androidroot.pid = (long)-1;
-		androidroot.isForeground = false; //TODO: android process
+	public static IOSRootElement buildRoot(SUT system) throws StateBuildException {
+		IOSRootElement iosroot = new IOSRootElement();
+		iosroot.isRunning = system.isRunning();
+		iosroot.timeStamp = System.currentTimeMillis();
+		iosroot.pid = (long)-1;
+		iosroot.isForeground = false; //TODO: ios process
 
-		return androidroot;
+		return iosroot;
 	}
 
 	@Override
-	public AndroidState call() throws Exception {
+	public IOSState call() throws Exception {
 		
-		AndroidRootElement rootElement = buildAndroidSkeleton(system);
+		IOSRootElement rootElement = buildIOSSkeleton(system);
 
 		if (rootElement == null) {
 			system.set(Tags.Desc, " ");
-			return new AndroidState(null);
+			return new IOSState(null);
 		}
 
-		system.set(Tags.Desc, "Android system");
+		system.set(Tags.Desc, "IOS system");
 
-		AndroidState root = createWidgetTree(rootElement);
+		IOSState root = createWidgetTree(rootElement);
 		root.set(Tags.Role, Roles.Process);
 		root.set(Tags.NotResponding, false);
 
@@ -92,53 +88,22 @@ public class AndroidStateFetcher implements Callable<AndroidState> {
 		return root;
 	}
 
-	private AndroidRootElement buildAndroidSkeleton(SUT system) {
-		AndroidRootElement rootElement = buildRoot(system);
+	private IOSRootElement buildIOSSkeleton(SUT system) {
+		IOSRootElement rootElement = buildRoot(system);
 
 		if(!rootElement.isRunning)
 			return rootElement;
 
 		rootElement.pid = system.get(Tags.PID, (long)-1);
-		
-		// 1 Option Screen: Screen size as State Rect
-		//Dimension screen = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
-		//rootElement.rect = Rect.from(0, 0, screen.getWidth(), screen.getHeight());
-		//rootElement.bounds = Rect.from(0, 0, screen.getWidth(), screen.getHeight());
-		
 
-		// 2 Option FrameLayout: Obtain specific internal Android FrameLayout as State Rect
-		/*try {
-		    MobileElement mainFrame = AppiumFramework.findElements(new By.ByClassName("android.widget.FrameLayout")).get(0);
+		Document xmlIOS;
+		if((xmlIOS = IOSAppiumFramework.getIOSPageSource()) != null) {
 
-		    rootElement.rect = Rect.from(
-		            mainFrame.getRect().getX(),
-		            mainFrame.getRect().getY(),
-		            mainFrame.getRect().getWidth(),
-		            mainFrame.getRect().getHeight());
-
-		    rootElement.bounds = Rect.from(
-		            mainFrame.getRect().getX(),
-		            mainFrame.getRect().getY(),
-		            mainFrame.getRect().getWidth(),
-		            mainFrame.getRect().getHeight());
-
-		} catch(Exception e) {
-		    System.out.println("Error: findElements(new By.ByClassName(\"android.widget.FrameLayout\")");
-		}
-		*/
-
-		Document xmlAndroid;
-		if((xmlAndroid = AndroidAppiumFramework.getAndroidPageSource()) != null) {
-
-		    Node stateNode = xmlAndroid.getDocumentElement();
-
-		    // 3 Option mainNode: state node element seems to have empty bounds
-		    //rootElement.rect = androidBoundsRect(AndroidNodeParser.getStringAttribute(stateNode, "bounds"));
-		    //rootElement.bounds = androidBoundsRect(AndroidNodeParser.getStringAttribute(stateNode, "bounds"));
+		    Node stateNode = xmlIOS.getDocumentElement();
 
 		    if(stateNode.hasChildNodes()) {
 				int childNum = stateNode.getChildNodes().getLength();
-				rootElement.children = new ArrayList<AndroidElement>(childNum);
+				rootElement.children = new ArrayList<IOSElement>(childNum);
 
 				for(int i = 0; i < childNum; i++) {
 					XmlNodeDescend(rootElement, stateNode.getChildNodes().item(i));
@@ -147,7 +112,7 @@ public class AndroidStateFetcher implements Callable<AndroidState> {
 
 		}
 
-		// 4 Option biggest Rect: after check widget tree, use biggest Rect as State Rect
+		// After check widget tree, use biggest Rect as State Rect
 		rootElement.rect = biggestRect;
 		rootElement.bounds = biggestRect;
 
@@ -164,32 +129,32 @@ public class AndroidStateFetcher implements Callable<AndroidState> {
 		return rootElement;
 	}
 
-	private void XmlNodeDescend(AndroidElement parent, Node xmlNode) {
-		AndroidElement childElement = new AndroidElement(parent);
+	private void XmlNodeDescend(IOSElement parent, Node xmlNode) {
+		IOSElement childElement = new IOSElement(parent);
 		parent.children.add(childElement);
 
 		childElement.zindex = parent.zindex + 1;
-		childElement.enabled = AndroidNodeParser.getBooleanAttribute(xmlNode, "enabled");
+		childElement.enabled = IOSNodeParser.getBooleanAttribute(xmlNode, "enabled");
 		childElement.ignore = false;
-		childElement.blocked = AndroidNodeParser.getBooleanAttribute(xmlNode, "focusable"); 
+		childElement.blocked = IOSNodeParser.getBooleanAttribute(xmlNode, "focusable"); 
 
-		childElement.nodeIndex = AndroidNodeParser.getIntegerAttribute(xmlNode, "index");
-		childElement.text = AndroidNodeParser.getStringAttribute(xmlNode, "text");
-		childElement.resourceId = AndroidNodeParser.getStringAttribute(xmlNode, "resource-id");
-		childElement.className = AndroidNodeParser.getStringAttribute(xmlNode, "class");
-		childElement.packageName = AndroidNodeParser.getStringAttribute(xmlNode, "package");
-		childElement.checkable = AndroidNodeParser.getBooleanAttribute(xmlNode, "checkable");
-		childElement.checked = AndroidNodeParser.getBooleanAttribute(xmlNode, "checked");
-		childElement.clickable = AndroidNodeParser.getBooleanAttribute(xmlNode, "clickable");
-		childElement.focusable = AndroidNodeParser.getBooleanAttribute(xmlNode, "focusable");
-		childElement.focused = AndroidNodeParser.getBooleanAttribute(xmlNode, "focused");
-		childElement.scrollable = AndroidNodeParser.getBooleanAttribute(xmlNode, "scrollable");
-		childElement.longclicklable = AndroidNodeParser.getBooleanAttribute(xmlNode, "long-clicklable");
-		childElement.password = AndroidNodeParser.getBooleanAttribute(xmlNode, "password");
-		childElement.selected = AndroidNodeParser.getBooleanAttribute(xmlNode, "selected");
+		childElement.nodeIndex = IOSNodeParser.getIntegerAttribute(xmlNode, "index");
+		childElement.text = IOSNodeParser.getStringAttribute(xmlNode, "text");
+		childElement.resourceId = IOSNodeParser.getStringAttribute(xmlNode, "resource-id");
+		childElement.className = IOSNodeParser.getStringAttribute(xmlNode, "class");
+		childElement.packageName = IOSNodeParser.getStringAttribute(xmlNode, "package");
+		childElement.checkable = IOSNodeParser.getBooleanAttribute(xmlNode, "checkable");
+		childElement.checked = IOSNodeParser.getBooleanAttribute(xmlNode, "checked");
+		childElement.clickable = IOSNodeParser.getBooleanAttribute(xmlNode, "clickable");
+		childElement.focusable = IOSNodeParser.getBooleanAttribute(xmlNode, "focusable");
+		childElement.focused = IOSNodeParser.getBooleanAttribute(xmlNode, "focused");
+		childElement.scrollable = IOSNodeParser.getBooleanAttribute(xmlNode, "scrollable");
+		childElement.longclicklable = IOSNodeParser.getBooleanAttribute(xmlNode, "long-clicklable");
+		childElement.password = IOSNodeParser.getBooleanAttribute(xmlNode, "password");
+		childElement.selected = IOSNodeParser.getBooleanAttribute(xmlNode, "selected");
 
-		childElement.rect = androidBoundsRect(AndroidNodeParser.getStringAttribute(xmlNode, "bounds"));
-		childElement.bounds = androidBoundsRect(AndroidNodeParser.getStringAttribute(xmlNode, "bounds"));
+		childElement.rect = iosBoundsRect(IOSNodeParser.getStringAttribute(xmlNode, "bounds"));
+		childElement.bounds = iosBoundsRect(IOSNodeParser.getStringAttribute(xmlNode, "bounds"));
 		
 		// TODO: Check a better way to create State Rect?
 		if(!Rect.contains(biggestRect, childElement.rect)) {
@@ -198,7 +163,7 @@ public class AndroidStateFetcher implements Callable<AndroidState> {
 
 		if(xmlNode.hasChildNodes()) {
 			int childNum = xmlNode.getChildNodes().getLength();
-			childElement.children = new ArrayList<AndroidElement>(childNum);
+			childElement.children = new ArrayList<IOSElement>(childNum);
 
 			for(int i = 0; i < childNum; i++) {
 				XmlNodeDescend(childElement, xmlNode.getChildNodes().item(i));
@@ -206,10 +171,10 @@ public class AndroidStateFetcher implements Callable<AndroidState> {
 		}
 	}
 
-	private AndroidState createWidgetTree(AndroidRootElement root) {
-		AndroidState state = new AndroidState(root);
+	private IOSState createWidgetTree(IOSRootElement root) {
+		IOSState state = new IOSState(root);
 		root.backRef = state;
-		for (AndroidElement childElement : root.children) {
+		for (IOSElement childElement : root.children) {
 			if (!childElement.ignore) {
 				createWidgetTree(state, childElement);
 			}
@@ -217,26 +182,26 @@ public class AndroidStateFetcher implements Callable<AndroidState> {
 		return state;
 	}
 
-	private void createWidgetTree(AndroidWidget parent, AndroidElement element) {
+	private void createWidgetTree(IOSWidget parent, IOSElement element) {
 		if (!element.enabled) {
 			return;
 		}
 
-		AndroidWidget w = parent.root().addChild(parent, element);
+		IOSWidget w = parent.root().addChild(parent, element);
 		element.backRef = w;
 
-		for (AndroidElement child : element.children) {
+		for (IOSElement child : element.children) {
 			createWidgetTree(w, child);
 		}
 	}
 
-	private void buildTLCMap(AndroidRootElement root){
-		AndroidElementMap.Builder builder = AndroidElementMap.newBuilder();
+	private void buildTLCMap(IOSRootElement root){
+		IOSElementMap.Builder builder = IOSElementMap.newBuilder();
 		buildTLCMap(builder, root);
 		root.elementMap = builder.build();
 	}
 
-	private void buildTLCMap(AndroidElementMap.Builder builder, AndroidElement el){
+	private void buildTLCMap(IOSElementMap.Builder builder, IOSElement el){
 		if(el.isTopLevelContainer) {
 			builder.addElement(el);
 		}
@@ -247,9 +212,9 @@ public class AndroidStateFetcher implements Callable<AndroidState> {
 	}
 
 	/**
-	 * Create a Rect of Android Elements bounds
+	 * Create a Rect of IOS Elements bounds
 	 * 
-	 * Android bounds [24,182][96,254]
+	 * ios bounds [24,182][96,254]
 	 * 
 	 * From X1 (24) to X2 (96)
 	 * From Y1 (182) to Y2 (254)
@@ -257,7 +222,7 @@ public class AndroidStateFetcher implements Callable<AndroidState> {
 	 * @param bounds
 	 * @return
 	 */
-	private Rect androidBoundsRect(String bounds) {
+	private Rect iosBoundsRect(String bounds) {
 	    String x1 = "0";
 	    String y1 = "0";
 	    String x2 = "0";

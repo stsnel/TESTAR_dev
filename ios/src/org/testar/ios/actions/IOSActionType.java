@@ -28,8 +28,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************************************/
 
-package org.testar.android.actions;
+package org.testar.ios.actions;
 
+import org.fruit.Util;
 import org.fruit.alayer.AbsolutePosition;
 import org.fruit.alayer.Action;
 import org.fruit.alayer.Color;
@@ -43,38 +44,39 @@ import org.fruit.alayer.TaggableBase;
 import org.fruit.alayer.Tags;
 import org.fruit.alayer.Widget;
 import org.fruit.alayer.exceptions.ActionFailedException;
-import org.fruit.alayer.visualizers.EllipseVisualizer;
-import org.testar.android.AndroidAppiumFramework;
-import org.testar.android.enums.AndroidRoles;
+import org.fruit.alayer.visualizers.TextVisualizer;
+import org.testar.ios.IOSAppiumFramework;
+import org.testar.ios.enums.IOSRoles;
 
-public class AndroidActionClick extends TaggableBase implements Action {
+public class IOSActionType extends TaggableBase implements Action {
 
-	private static final long serialVersionUID = 6663144395605910140L;
+	private static final long serialVersionUID = 6685918140970666660L;
 
-	private String text;
+	private String type;
 	private String resourceId;
 	
-	private static final Pen LClickPen = Pen.newPen().setColor(Color.Green)
-	        .setFillPattern(FillPattern.Solid).setStrokeWidth(3).build();
+	private static final Pen TypePen = Pen.newPen().setColor(Color.Blue)
+	        .setFillPattern(FillPattern.None).setStrokeWidth(3).build(); // use default font size
+	private final int DISPLAY_TEXT_MAX_LENGTH = 16;
 
-	public AndroidActionClick(State state, Widget w, String text, String resourceId) {
-	    this.set(Tags.Role, AndroidRoles.AndroidWidget);
+	public IOSActionType(State state, Widget w, String type, String resourceId) {
+	    this.set(Tags.Role, IOSRoles.iosWidget);
 	    this.set(Tags.OriginWidget, w);
-	    this.text = text;
+	    this.type = type;
 	    this.resourceId = resourceId;
 	    this.set(Tags.Desc, toShortString());
 	    double relX = w.get(Tags.Shape).x() + w.get(Tags.Shape).width()/2;
 	    double relY = w.get(Tags.Shape).y() + w.get(Tags.Shape).height()/2;
 	    Position position = new AbsolutePosition(relX, relY);
-	    this.set(Tags.Visualizer, new EllipseVisualizer(position, LClickPen, 10, 10));
+	    this.set(Tags.Visualizer, new TextVisualizer(position, Util.abbreviate(type, DISPLAY_TEXT_MAX_LENGTH, "..."), TypePen));
 	}
 
 	@Override
 	public void run(SUT system, State state, double duration) throws ActionFailedException {
 		try {
-		    AndroidAppiumFramework.clickElementById(this.resourceId);
+		    IOSAppiumFramework.setValueElementById(this.resourceId, this.type);
 		} catch(Exception e) {
-			System.out.println("Exception trying to click Element By Id : " + this.resourceId);
+			System.out.println("Exception trying to Type " + this.type + " in the Element with Id : " + this.resourceId);
 			System.out.println(e.getMessage());
 			throw new ActionFailedException(toShortString());
 		}
@@ -82,7 +84,7 @@ public class AndroidActionClick extends TaggableBase implements Action {
 
 	@Override
 	public String toShortString() {
-		return "Execute Android click in Widget: " + this.text + " with Id: " + this.resourceId;
+		return "Execute IOS Type: " + this.type + " with Id: " + this.resourceId;
 	}
 
 	@Override

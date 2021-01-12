@@ -41,9 +41,13 @@ import org.fruit.alayer.webdriver.WdStateBuilder;
 import org.fruit.alayer.webdriver.enums.WdRoles;
 import org.fruit.alayer.webdriver.enums.WdTags;
 import org.fruit.alayer.windows.*;
+import org.testar.android.AndroidAppiumFramework;
 import org.testar.android.AndroidStateBuilder;
-import org.testar.android.AppiumFramework;
 import org.testar.android.enums.AndroidRoles;
+import org.testar.ios.IOSAppiumFramework;
+import org.testar.ios.IOSCanvas;
+import org.testar.ios.IOSStateBuilder;
+import org.testar.ios.enums.IOSRoles;
 
 import java.util.*;
 
@@ -99,9 +103,17 @@ public class NativeLinker {
 	public static void cleanAndroidOS() {
 		PLATFORM_OS.remove(OperatingSystems.ANDROID);
 	}
-	
+
+	public static void addIOS() {
+	    PLATFORM_OS.add(OperatingSystems.IOS);
+	}
+
+	public static void cleanIOS() {
+	    PLATFORM_OS.remove(OperatingSystems.IOS);
+	}
+
 	public static Set<OperatingSystems> getPLATFORM_OS() {
-		return PLATFORM_OS;
+	    return PLATFORM_OS;
 	}
 
 	/**
@@ -117,6 +129,9 @@ public class NativeLinker {
 	    }
 	    if (PLATFORM_OS.contains(OperatingSystems.ANDROID)) {
 	        return new AndroidStateBuilder(timeToFreeze);
+	    }
+	    if (PLATFORM_OS.contains(OperatingSystems.IOS)) {
+	        return new IOSStateBuilder(timeToFreeze);
 	    }
 	    if (PLATFORM_OS.contains(OperatingSystems.WINDOWS)) {
 	        if (PLATFORM_OS.contains(OperatingSystems.WINDOWS_7)) {
@@ -152,6 +167,9 @@ public class NativeLinker {
 			//return new AndroidCanvas(pen);
 			return GDIScreenCanvas.fromPrimaryMonitor(pen);
 		}
+		if (PLATFORM_OS.contains(OperatingSystems.IOS)) {
+		    return new IOSCanvas(pen);
+		}
 		if (PLATFORM_OS.contains(OperatingSystems.WINDOWS)) {
 			return GDIScreenCanvas.fromPrimaryMonitor(pen);
 			//return JavaScreenCanvas.fromPrimaryMonitor(pen);
@@ -174,7 +192,10 @@ public class NativeLinker {
 	        return WdDriver.fromExecutable(executableCommand);
 	    }
 	    if (PLATFORM_OS.contains(OperatingSystems.ANDROID)) {
-	        return AppiumFramework.fromCapabilities(executableCommand);
+	        return AndroidAppiumFramework.fromCapabilities(executableCommand);
+	    }
+	    if (PLATFORM_OS.contains(OperatingSystems.IOS)) {
+	        return IOSAppiumFramework.fromCapabilities(executableCommand);
 	    }
 	    if (PLATFORM_OS.contains(OperatingSystems.WINDOWS)) {
 	        if (PLATFORM_OS.contains(OperatingSystems.WINDOWS_7)) {
@@ -209,7 +230,10 @@ public class NativeLinker {
 			return WdDriver.fromAll();
 		}
 		else if (PLATFORM_OS.contains(OperatingSystems.ANDROID)) {
-			return AppiumFramework.fromAll();
+			return AndroidAppiumFramework.fromAll();
+		}
+		else if (PLATFORM_OS.contains(OperatingSystems.IOS)) {
+		    return IOSAppiumFramework.fromAll();
 		}
 		else if (PLATFORM_OS.contains(OperatingSystems.WINDOWS))
 			return WinProcess.fromAll();
@@ -246,6 +270,10 @@ public class NativeLinker {
 			//TODO: Implement Emulator + internal android usage
 			return 0;
 		}
+		if (PLATFORM_OS.contains(OperatingSystems.IOS)) {
+		    //TODO: Implement Emulator + internal android usage
+		    return 0;
+		}
 		if (PLATFORM_OS.contains(OperatingSystems.WINDOWS))
 			return (int)(WinProcess.getMemUsage((WinProcess)nativeSUT) / 1024); // byte -> KB
 		else if (PLATFORM_OS.contains(OperatingSystems.UNIX))
@@ -266,6 +294,10 @@ public class NativeLinker {
 		if (PLATFORM_OS.contains(OperatingSystems.ANDROID)) {
 			//TODO: Implement Emulator + internal android usage
 			return new long[]{0, 0, 0};
+		}
+		if (PLATFORM_OS.contains(OperatingSystems.IOS)) {
+		    //TODO: Implement Emulator + internal android usage
+		    return new long[]{0, 0, 0};
 		}
 		if (PLATFORM_OS.contains(OperatingSystems.WINDOWS)) {
 			long now = System.currentTimeMillis();
@@ -288,6 +320,9 @@ public class NativeLinker {
 		}
 		if (PLATFORM_OS.contains(OperatingSystems.ANDROID)) {
 			return AndroidRoles.rolesSet();
+		}
+		if (PLATFORM_OS.contains(OperatingSystems.IOS)) {
+		    return IOSRoles.rolesSet();
 		}
 		if (PLATFORM_OS.contains(OperatingSystems.WINDOWS))
 			return UIARoles.rolesSet();

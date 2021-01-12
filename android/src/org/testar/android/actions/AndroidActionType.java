@@ -45,7 +45,7 @@ import org.fruit.alayer.Tags;
 import org.fruit.alayer.Widget;
 import org.fruit.alayer.exceptions.ActionFailedException;
 import org.fruit.alayer.visualizers.TextVisualizer;
-import org.testar.android.AppiumFramework;
+import org.testar.android.AndroidAppiumFramework;
 import org.testar.android.enums.AndroidRoles;
 
 public class AndroidActionType extends TaggableBase implements Action {
@@ -74,7 +74,7 @@ public class AndroidActionType extends TaggableBase implements Action {
 	@Override
 	public void run(SUT system, State state, double duration) throws ActionFailedException {
 		try {
-			AppiumFramework.setValueElementById(this.resourceId, this.type);
+		    AndroidAppiumFramework.setValueElementById(this.resourceId, this.type);
 		} catch(Exception e) {
 			System.out.println("Exception trying to Type " + this.type + " in the Element with Id : " + this.resourceId);
 			System.out.println(e.getMessage());

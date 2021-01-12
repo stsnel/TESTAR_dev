@@ -37,9 +37,9 @@ import org.fruit.alayer.actions.StdActionCompiler;
 import org.fruit.alayer.exceptions.*;
 import org.fruit.monkey.ConfigTags;
 import org.fruit.monkey.Settings;
-import org.testar.android.AndroidProtocolUtil;
-import org.testar.android.actions.*;
-import org.testar.android.enums.AndroidTags;
+import org.testar.ios.actions.IOSActionClick;
+import org.testar.ios.actions.IOSActionType;
+import org.testar.ios.enums.IOSTags;
 import org.testar.protocols.DesktopProtocol;
 
 import es.upv.staq.testar.NativeLinker;
@@ -48,7 +48,7 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.remote.DesiredCapabilities;
 
 
-public class Protocol_android_generic extends DesktopProtocol {
+public class Protocol_ios_generic extends DesktopProtocol {
 
 	/**
 	 * Called once during the life time of TESTAR
@@ -57,8 +57,8 @@ public class Protocol_android_generic extends DesktopProtocol {
 	 */
 	@Override
 	protected void initialize(Settings settings){
-		//TODO: Create AndroidProtocol and move OS initialization
-		NativeLinker.addAndroidOS();
+		//TODO: Create IOSProtocol and move OS initialization
+		NativeLinker.addIOS();
 		super.initialize(settings);
 	}
 	
@@ -72,11 +72,11 @@ public class Protocol_android_generic extends DesktopProtocol {
 	protected void beginSequence(SUT system, State state){
 	 	super.beginSequence(system, state);
 	 	
-	 	// Android Action Type example
+	 	// IOS Action Type example
 	 	for(Widget w : state) {
-	 		if(w.get(AndroidTags.AndroidClassName, "").equals("android.widget.EditText")) {
-	 			Action androidType = new AndroidActionType(state, w, "TypeExample", w.get(AndroidTags.AndroidResourceId,""));
-	 			androidType.run(system, state, 1.0);
+	 		if(w.get(IOSTags.iosClassName, "").equals("IOS.widget.EditText")) {
+	 			Action iosType = new IOSActionType(state, w, "TypeExample", w.get(IOSTags.iosResourceId,""));
+	 			iosType.run(system, state, 1.0);
 	 		}
 	 	}
 	}
@@ -94,11 +94,11 @@ public class Protocol_android_generic extends DesktopProtocol {
 		// suspicious titles
 		Verdict verdict = super.getVerdict(state);
 
-		
+		// If Tags.Title is properly mapped, we don't need this
 		for(Widget w : state) {
-			if(w.get(AndroidTags.AndroidText, "").toLowerCase().contains("error")
-					|| w.get(AndroidTags.AndroidText, "").toLowerCase().contains("exception")) {
-				return (new Verdict(Verdict.SEVERITY_SUSPICIOUS_TITLE, w.get(AndroidTags.AndroidText, "")));
+			if(w.get(IOSTags.iosText, "").toLowerCase().contains("error")
+					|| w.get(IOSTags.iosText, "").toLowerCase().contains("exception")) {
+				return (new Verdict(Verdict.SEVERITY_SUSPICIOUS_TITLE, w.get(IOSTags.iosText, "")));
 			}
 		}
 		//--------------------------------------------------------
@@ -145,18 +145,18 @@ public class Protocol_android_generic extends DesktopProtocol {
 			// type into text boxes
 			if (isTypeable(widget) && (whiteListed(widget) || isUnfiltered(widget))) {
 				actions.add(
-						new AndroidActionType(state, widget,
+						new IOSActionType(state, widget,
 						this.getRandomText(widget),
-						widget.get(AndroidTags.AndroidResourceId,""))
+						widget.get(IOSTags.iosResourceId,""))
 						);
 			}
 
 			// left clicks, but ignore links outside domain
 			if (isClickable(widget)/* && (whiteListed(widget) || isUnfiltered(widget))*/) {
 				actions.add(
-						new AndroidActionClick(state, widget,
-						widget.get(AndroidTags.AndroidText,""), 
-						widget.get(AndroidTags.AndroidResourceId,""))
+						new IOSActionClick(state, widget,
+						widget.get(IOSTags.iosText,""), 
+						widget.get(IOSTags.iosResourceId,""))
 						);
 			}
 			
@@ -169,19 +169,19 @@ public class Protocol_android_generic extends DesktopProtocol {
 	
 	@Override
 	protected boolean isClickable(Widget w) {
-		return (w.get(AndroidTags.AndroidClassName, "").equals("android.widget.ImageButton")
-		|| w.get(AndroidTags.AndroidClassName, "").equals("android.widget.Button"));
+		return (w.get(IOSTags.iosClassName, "").equals("IOS.widget.ImageButton")
+		|| w.get(IOSTags.iosClassName, "").equals("IOS.widget.Button"));
 	}
 	
 	@Override
 	protected boolean isTypeable(Widget w) {
-		return (w.get(AndroidTags.AndroidClassName, "").equals("android.widget.EditText"));
+		return (w.get(IOSTags.iosClassName, "").equals("IOS.widget.EditText"));
 	}
 
 	@Override
 	protected void closeTestSession() {
 		super.closeTestSession();
-		//TODO: Create AndroidProtocol and move OS finalization
-		NativeLinker.cleanAndroidOS();
+		//TODO: Create IOSProtocol and move OS finalization
+		NativeLinker.cleanIOS();
 	}
 }

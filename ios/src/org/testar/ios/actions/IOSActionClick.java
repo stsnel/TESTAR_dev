@@ -28,7 +28,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************************************/
 
-package org.testar.android.actions;
+package org.testar.ios.actions;
 
 import org.fruit.alayer.AbsolutePosition;
 import org.fruit.alayer.Action;
@@ -44,10 +44,10 @@ import org.fruit.alayer.Tags;
 import org.fruit.alayer.Widget;
 import org.fruit.alayer.exceptions.ActionFailedException;
 import org.fruit.alayer.visualizers.EllipseVisualizer;
-import org.testar.android.AndroidAppiumFramework;
-import org.testar.android.enums.AndroidRoles;
+import org.testar.ios.IOSAppiumFramework;
+import org.testar.ios.enums.IOSRoles;
 
-public class AndroidActionClick extends TaggableBase implements Action {
+public class IOSActionClick extends TaggableBase implements Action {
 
 	private static final long serialVersionUID = 6663144395605910140L;
 
@@ -57,8 +57,8 @@ public class AndroidActionClick extends TaggableBase implements Action {
 	private static final Pen LClickPen = Pen.newPen().setColor(Color.Green)
 	        .setFillPattern(FillPattern.Solid).setStrokeWidth(3).build();
 
-	public AndroidActionClick(State state, Widget w, String text, String resourceId) {
-	    this.set(Tags.Role, AndroidRoles.AndroidWidget);
+	public IOSActionClick(State state, Widget w, String text, String resourceId) {
+	    this.set(Tags.Role, IOSRoles.iosWidget);
 	    this.set(Tags.OriginWidget, w);
 	    this.text = text;
 	    this.resourceId = resourceId;
@@ -72,7 +72,7 @@ public class AndroidActionClick extends TaggableBase implements Action {
 	@Override
 	public void run(SUT system, State state, double duration) throws ActionFailedException {
 		try {
-		    AndroidAppiumFramework.clickElementById(this.resourceId);
+		    IOSAppiumFramework.clickElementById(this.resourceId);
 		} catch(Exception e) {
 			System.out.println("Exception trying to click Element By Id : " + this.resourceId);
 			System.out.println(e.getMessage());
@@ -82,7 +82,7 @@ public class AndroidActionClick extends TaggableBase implements Action {
 
 	@Override
 	public String toShortString() {
-		return "Execute Android click in Widget: " + this.text + " with Id: " + this.resourceId;
+		return "Execute IOS click in Widget: " + this.text + " with Id: " + this.resourceId;
 	}
 
 	@Override
