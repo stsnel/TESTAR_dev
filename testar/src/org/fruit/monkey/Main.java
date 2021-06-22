@@ -30,6 +30,7 @@
 
 package org.fruit.monkey;
 
+import es.upv.staq.testar.ActionManagementTags;
 import es.upv.staq.testar.CodingManager;
 import es.upv.staq.testar.NativeLinker;
 import es.upv.staq.testar.OperatingSystems;
@@ -306,6 +307,7 @@ public class Main {
 			settings = loadSettings(args, testSettingsFileName);
 		} catch (ConfigException ce) {
 			LogSerialiser.log("There is an issue with the configuration file: " + ce.getMessage() + "\n", LogSerialiser.LogLevel.Critical);
+			System.out.println(ce.getMessage());
 		}
 
 		//TODO: Understand what this exactly does?
@@ -501,6 +503,12 @@ public class Main {
 				}
 			}));
 
+			defaults.add(Pair.from(AbstractActionAttributes, new ArrayList<String>() {
+			    {
+			        add("iv4xrActionOriginWidgetPath");
+			    }
+			}));
+
 			defaults.add(Pair.from(ClickableClasses, new ArrayList<String>() {
 				{
 					add("v-menubar-menuitem");
@@ -577,13 +585,17 @@ public class Main {
 
 			// check that the abstract state properties and the abstract action properties have at least 1 value
 			if ((settings.get(AbstractStateAttributes)).isEmpty()) {
-				throw new ConfigException("Please provide at least 1 valid abstract state attribute or leave the key out of the settings file");
+			    throw new ConfigException("Please provide at least 1 valid abstract state attribute or leave the key out of the settings file");
 			}
 
+			// check that the abstract action properties have at least 1 value
+			if ((settings.get(AbstractActionAttributes)).isEmpty()) {
+			    throw new ConfigException("Please provide at least 1 valid abstract action attribute or leave the key out of the settings file");
+			}
 			try{
-				settings.get(ConfigTags.ExtendedSettingsFile);
+			    settings.get(ConfigTags.ExtendedSettingsFile);
 			} catch (NoSuchTagException e){
-				settings.set(ConfigTags.ExtendedSettingsFile, file.replace(SETTINGS_FILE, ExtendedSettingFile.FileName));
+			    settings.set(ConfigTags.ExtendedSettingsFile, file.replace(SETTINGS_FILE, ExtendedSettingFile.FileName));
 			}
 			ExtendedSettingsFactory.Initialize(settings.get(ConfigTags.ExtendedSettingsFile));
 
@@ -757,6 +769,18 @@ public class Main {
         if (!settings.get(ConfigTags.AbstractStateAttributes).isEmpty()) {
             Tag<?>[] abstractTags = settings.get(AbstractStateAttributes).stream().map(StateManagementTags::getTagFromSettingsString).filter(Objects::nonNull).toArray(Tag<?>[]::new);
             CodingManager.setCustomTagsForAbstractId(abstractTags);
+        }
+        
+        // Now Action Management Tags
+        Set<Tag<?>> actionManagementTags = ActionManagementTags.getAllTags();
+        // for the concrete action tags we use all the action management tags that are available
+        if (!actionManagementTags.isEmpty()) {
+            CodingManager.setCustomTagsForActionConcreteId(actionManagementTags.toArray(new Tag<?>[0]));
+        }
+        // then the attributes for the abstract action id
+        if (!settings.get(ConfigTags.AbstractActionAttributes).isEmpty()) {
+            Tag<?>[] abstractTags = settings.get(AbstractActionAttributes).stream().map(ActionManagementTags::getTagFromSettingsString).filter(Objects::nonNull).toArray(Tag<?>[]::new);
+            CodingManager.setCustomTagsForActionAbstractId(abstractTags);
         }
     }
 

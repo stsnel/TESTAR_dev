@@ -28,6 +28,7 @@
 * POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************************************/
 
+import java.util.Map;
 import java.util.Set;
 
 import nl.ou.testar.RandomActionSelector;
@@ -67,15 +68,15 @@ public class Protocol_desktop_generic_statemodel extends DesktopProtocol {
 
 		// Derive left-click actions, click and type actions, and scroll actions from
 		// top level (highest Z-index) widgets of the GUI:
-		actions = deriveClickTypeScrollActionsFromTopLevelWidgets(actions, system, state);
+		//actions = deriveClickTypeScrollActionsFromTopLevelWidgets(actions, system, state);
 
-		if(actions.isEmpty()){
+		//if(actions.isEmpty()){
 			// If the top level widgets did not have any executable widgets, try all widgets:
 //			System.out.println("No actions from top level widgets, changing to all widgets.");
 			// Derive left-click actions, click and type actions, and scroll actions from
 			// all widgets of the GUI:
 			actions = deriveClickTypeScrollActionsFromAllWidgetsOfState(actions, system, state);
-		}
+		//}
 
 		//return the set of derived actions
 		return actions;

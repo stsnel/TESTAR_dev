@@ -215,5 +215,13 @@ public final class Tags extends TagsBase {
 	 * The original widget that can be attached to things like actions
 	 */
 	public static final Tag<Widget> OriginWidget = from("OriginWidget", Widget.class);
-	
+
+    public static final Tag<String> OriginStateAbstractId = Tag.from("OriginStateAbstractId", String.class);
+    public static final Tag<String> OriginWidgetAbstractId = Tag.from("OriginWidgetAbstractId", String.class);
+    public static final Tag<String> OriginWidgetPath = Tag.from("OriginWidgetPath", String.class);
+    public static final Tag<Role> OriginWidgetRole = Tag.from("OriginWidgetRole", Role.class);
+    public static final Tag<String> OriginWidgetTitle = Tag.from("OriginWidgetTitle", String.class);
+    public static final Tag<String> OriginWidgetValuePattern = Tag.from("OriginWidgetValuePattern", String.class);
+    public static final Tag<Integer> debugExecutedTimes = Tag.from("debugExecutedTimes", Integer.class);
+
 }

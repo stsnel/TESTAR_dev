@@ -1,7 +1,7 @@
 /***************************************************************************************************
  *
- * Copyright (c) 2018 - 2020 Open Universiteit - www.ou.nl
- * Copyright (c) 2018 - 2020 Universitat Politecnica de Valencia - www.upv.es
+ * Copyright (c) 2018 - 2021 Open Universiteit - www.ou.nl
+ * Copyright (c) 2018 - 2021 Universitat Politecnica de Valencia - www.upv.es
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -32,6 +32,7 @@ package org.fruit.alayer.windows;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+
 import org.fruit.alayer.Tag;
 import org.fruit.alayer.Tags;
 

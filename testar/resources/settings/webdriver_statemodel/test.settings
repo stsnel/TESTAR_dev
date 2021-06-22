@@ -123,6 +123,11 @@ DataStoreMode = instant
 AbstractStateAttributes = WebWidgetId
 
 #################################################################
+# Action identifier attributes
+#################################################################
+AbstractActionAttributes = ActionOriginStateAbstractId,ActionOriginWidgetPath,ActionOriginWidgetRole
+
+#################################################################
 # WebDriver features
 #################################################################
 ClickableClasses = v-menubar-menuitem;v-menubar-menuitem-caption

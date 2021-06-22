@@ -1,7 +1,7 @@
 /***************************************************************************************************
 *
-* Copyright (c) 2016 - 2020 Universitat Politecnica de Valencia - www.upv.es
-* Copyright (c) 2018 - 2020 Open Universiteit - www.ou.nl
+* Copyright (c) 2016 - 2021 Universitat Politecnica de Valencia - www.upv.es
+* Copyright (c) 2018 - 2021 Open Universiteit - www.ou.nl
 *
 * Redistribution and use in source and binary forms, with or without
 * modification, are permitted provided that the following conditions are met:
@@ -84,6 +84,12 @@ public class CodingManager {
 	private static Tag<?>[] customTagsForConcreteId = new Tag<?>[]{};
 	private static Tag<?>[] customTagsForAbstractId = new Tag<?>[]{};
 	private static Tag<?>[] defaultAbstractStateTags = new Tag<?>[] {StateManagementTags.WidgetControlType};
+	
+	// arrays to hold the tags used for concrete and abstract action id's
+	private static Tag<?>[] customTagsForActionConcreteId = new Tag<?>[]{};
+	private static Tag<?>[] customTagsForActionAbstractId = new Tag<?>[]{};
+	private static Tag<?>[] defaultAbstractActionTags = new Tag<?>[] {
+	    ActionManagementTags.ActionOriginStateAbstractId, ActionManagementTags.ActionOriginWidgetPath, ActionManagementTags.ActionOriginWidgetRole};
 
     /**
      * Set the array of tags that should be used in constructing the concrete state id's.
@@ -124,6 +130,23 @@ public class CodingManager {
 	 * @return
 	 */
 	public static Tag<?>[] getDefaultAbstractStateTags() {return defaultAbstractStateTags;}
+	
+	/**
+	 *  TODO: complete description
+	 */
+	public static synchronized void setCustomTagsForActionConcreteId(Tag<?>[] tags) {
+	    customTagsForActionConcreteId = tags;
+	    Arrays.sort(customTagsForActionConcreteId,Comparator.comparing(Tag::name));
+	}
+	public static synchronized void setCustomTagsForActionAbstractId(Tag<?>[] tags) {
+	    customTagsForActionAbstractId = tags;
+	    Arrays.sort(customTagsForActionAbstractId, Comparator.comparing(Tag::name));
+	}
+	public static Tag<?>[] getCustomTagsForActionAbstractId() {
+	    return customTagsForActionAbstractId;
+	}
+	public static Tag<?>[] getCustomTagsForActionConcreteId() { return customTagsForActionConcreteId;}
+	public static Tag<?>[] getDefaultAbstractActionTags() {return defaultAbstractActionTags;}
 
 	// ###########################################
 	//  Widgets/States and Actions IDs management
@@ -185,18 +208,34 @@ public class CodingManager {
 	 * @param actions The actions.
 	 */
 	public static synchronized void buildIDs(State state, Set<Action> actions){
+
+	    // TODO: Maybe not the best place to set the action Tags
+	    // We need to do it after deriveActions and before this buildIDs
+	    setActionTags(state, actions);
+
 	    for (Action a : actions) {
+	        // Build ConcreteID and AbstractID
 	        a.set(Tags.ConcreteID, ID_PREFIX_ACTION + ID_PREFIX_CONCRETE +
 	                CodingManager.codify(state.get(Tags.ConcreteID), a));
-	        a.set(Tags.ConcreteIDCustom, ID_PREFIX_ACTION + ID_PREFIX_CONCRETE_CUSTOM +
-	                CodingManager.codify(state.get(Tags.ConcreteIDCustom), a));
 	        a.set(Tags.AbstractID, ID_PREFIX_ACTION + ID_PREFIX_ABSTRACT +
 	                CodingManager.codify(state.get(Tags.ConcreteID), a, ROLES_ABSTRACT_ACTION));
+
+	        // State Model ConcreteIDCustom and AbstractIDCustom
+	        System.out.println("DEBUG: ConcreteIDCustom");
+	        a.set(Tags.ConcreteIDCustom, ID_PREFIX_ACTION + ID_PREFIX_CONCRETE_CUSTOM + 
+	                CodingManager.codify(a, customTagsForActionConcreteId));
+	        System.out.println("ConcreteIDCustom : " + a.get(Tags.ConcreteIDCustom, "Not created correctly"));
+
+	        System.out.println("DEBUG: AbstractIDCustom");
+	        a.set(Tags.AbstractIDCustom, ID_PREFIX_ACTION + ID_PREFIX_ABSTRACT_CUSTOM + 
+	                CodingManager.codify(a, customTagsForActionAbstractId));
+	        System.out.println("AbstractIDCustom : " + a.get(Tags.AbstractIDCustom, "Not created correctly"));
+
 	    }
 
-		// for the custom abstract action identifier, we first sort the actions by their path in the widget tree
-		// and then set their ids using incremental counters
-		Map<Role, Integer> roleCounter = new HashMap<>();
+	    // for the custom abstract action identifier, we first sort the actions by their path in the widget tree
+	    // and then set their ids using incremental counters
+	    /*Map<Role, Integer> roleCounter = new HashMap<>();
 		actions.stream().
 				filter(action -> {
 					try {
@@ -217,7 +256,29 @@ public class CodingManager {
 						action.set(Tags.AbstractIDCustom, ID_PREFIX_ACTION + ID_PREFIX_ABSTRACT_CUSTOM +
 							lowCollisionID(state.get(Tags.AbstractIDCustom) + getAbstractActionIdentifier(action, roleCounter)));
 				}
-		);
+		);*/
+	}
+
+	private static void setActionTags(State state, Set<Action> actions) {
+	    for(Action a : actions) {
+	        a.set(Tags.OriginStateAbstractId, state.get(Tags.AbstractIDCustom));
+	        // Use OriginWidget, if does not exists use the state
+	        a.set(Tags.OriginWidgetAbstractId, a.get(Tags.OriginWidget, state).get(Tags.AbstractIDCustom));
+	        a.set(Tags.OriginWidgetPath, a.get(Tags.OriginWidget, state).get(Tags.Path));
+	        a.set(Tags.OriginWidgetRole, a.get(Tags.OriginWidget, state).get(Tags.Role));
+	        a.set(Tags.OriginWidgetTitle, a.get(Tags.OriginWidget, state).get(Tags.Title));
+	        a.set(Tags.OriginWidgetValuePattern, a.get(Tags.OriginWidget, state).get(Tags.ValuePattern, ""));
+	        // Now set the ActionManagementTags
+	        setActionManagementTags(a);
+	    }
+	}
+
+	@SuppressWarnings("unchecked")
+	private static void setActionManagementTags(Action action) {
+	    for(Map.Entry<Tag<?>, Tag<?>> entry : ActionManagementTags.getActionTagMap().entrySet()) {
+	        Tag actionManagementTag = entry.getKey();
+	        action.set(actionManagementTag, action.get(entry.getValue()));
+	    }
 	}
 
 	/**
@@ -225,14 +286,14 @@ public class CodingManager {
 	 * @param action An action.
 	 */
 	public static synchronized void buildEnvironmentActionIDs(State state, Action action){		
-		action.set(Tags.ConcreteID, ID_PREFIX_ACTION + ID_PREFIX_CONCRETE +
-				   CodingManager.codify(state.get(Tags.ConcreteID), action));
-		action.set(Tags.ConcreteIDCustom, ID_PREFIX_ACTION + ID_PREFIX_CONCRETE_CUSTOM +
-					CodingManager.codify(state.get(Tags.ConcreteIDCustom), action));
-		action.set(Tags.AbstractID, ID_PREFIX_ACTION + ID_PREFIX_ABSTRACT +
-				   CodingManager.codify(state.get(Tags.ConcreteID), action, ROLES_ABSTRACT_ACTION));
-		action.set(Tags.AbstractIDCustom, ID_PREFIX_ACTION + ID_PREFIX_ABSTRACT_CUSTOM +
-					CodingManager.codify(state.get(Tags.AbstractIDCustom), action, ROLES_ABSTRACT_ACTION));
+	    action.set(Tags.ConcreteID, ID_PREFIX_ACTION + ID_PREFIX_CONCRETE +
+	            CodingManager.codify(state.get(Tags.ConcreteID), action));
+	    action.set(Tags.ConcreteIDCustom, ID_PREFIX_ACTION + ID_PREFIX_CONCRETE_CUSTOM +
+	            CodingManager.codify(state.get(Tags.ConcreteIDCustom), action));
+	    action.set(Tags.AbstractID, ID_PREFIX_ACTION + ID_PREFIX_ABSTRACT +
+	            CodingManager.codify(state.get(Tags.ConcreteID), action, ROLES_ABSTRACT_ACTION));
+	    action.set(Tags.AbstractIDCustom, ID_PREFIX_ACTION + ID_PREFIX_ABSTRACT_CUSTOM +
+	            CodingManager.codify(state.get(Tags.AbstractIDCustom), action, ROLES_ABSTRACT_ACTION));
 	}
 
 	/**
@@ -240,7 +301,7 @@ public class CodingManager {
 	 * @param action
 	 * @param roleCounter
 	 */
-	private static void updateRoleCounter(Action action, Map<Role, Integer> roleCounter) {
+	/*private static void updateRoleCounter(Action action, Map<Role, Integer> roleCounter) {
 		Role role;
 		try {
 			role = action.get(Tags.OriginWidget).get(Tags.Role);
@@ -250,7 +311,7 @@ public class CodingManager {
 		}
 		// if the role as key is not present, this will initialize with 1, otherwise it will increment with 1
 		roleCounter.merge(role, 1, Integer::sum);
-	}
+	}*/
 
 	/**
 	 * This method will return a string that identifies each action (abstractly).
@@ -258,7 +319,7 @@ public class CodingManager {
 	 * @param roleCounter
 	 * @return
 	 */
-	private static String getAbstractActionIdentifier(Action action, Map<Role, Integer> roleCounter) {
+	/*private static String getAbstractActionIdentifier(Action action, Map<Role, Integer> roleCounter) {
 		Role role;
 		try {
 			role = action.get(Tags.OriginWidget).get(Tags.Role);
@@ -267,7 +328,7 @@ public class CodingManager {
 			role = action.get(Tags.Role, Roles.Invalid);
 		}
 		return role.toString() + roleCounter.getOrDefault(role, 999);
-	}
+	}*/
 	
 	// ###############
 	//  STATES CODING
@@ -296,7 +357,21 @@ public class CodingManager {
 
 	private static String codify(String stateID, Action action, Role... discardParameters){
 		return lowCollisionID(stateID + action.toString(discardParameters));
-	}	
+	}
+
+	private static String codify(Action action, Tag<?>... tags){
+	    return lowCollisionID(getTaggedString(action, tags));
+	}
+
+	private static String getTaggedString(Action action, Tag<?>... tags){
+	    StringBuilder sb = new StringBuilder();
+	    for(Tag<?> t : tags) {
+	        System.out.println("tag name: " + t.name());
+	        sb.append(action.get(t, null));
+	    }
+	    System.out.println("ACTIONS sb.toString : " + sb.toString());
+	    return sb.toString();
+	}
 	
 	// ############
 	//  IDS CODING
