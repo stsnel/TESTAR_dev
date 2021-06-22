@@ -40,9 +40,53 @@ import org.testar.android.actions.*;
 import org.testar.android.enums.AndroidTags;
 import org.testar.protocols.AndroidProtocol;
 
+import es.upv.staq.testar.CodingManager;
+
 
 public class Protocol_android_generic extends AndroidProtocol {
-	
+
+    /**
+     * Use CodingManager to create the Widget and State identifiers: 
+     * ConcreteID, ConcreteIDCustom, AbstractID, AbstractIDCustom, 
+     * Abstract_R_ID, Abstract_R_T_ID, Abstract_R_T_P_ID 
+     * 
+     * @param state
+     */
+    @Override
+    protected void buildStateIdentifiers(State state) {
+        // By default TESTAR invokes CodingManager, 
+        // but here you can change the way we define the identifiers of widgets and actions
+        CodingManager.buildIDs(state);
+    }
+
+    /**
+     * Use CodingManager to create the Actions identifiers: 
+     * ConcreteID, ConcreteIDCustom, AbstractID, AbstractIDCustom 
+     * 
+     * @param state
+     * @param actions
+     */
+    @Override
+    protected void buildStateActionsIdentifiers(State state, Set<Action> actions) {
+        // By default TESTAR invokes CodingManager, 
+        // but here you can change the way we define the identifiers of widgets and actions
+        CodingManager.buildIDs(state, actions);
+    }
+
+    /**
+     * Use CodingManager to create the specific environment Action identifiers: 
+     * ConcreteID, ConcreteIDCustom, AbstractID, AbstractIDCustom 
+     * 
+     * @param state
+     * @param action
+     */
+    @Override
+    protected void buildEnvironmentActionIdentifiers(State state, Action action) {
+        // By default TESTAR invokes CodingManager, 
+        // but here you can change the way we define the identifiers of widgets and actions
+        CodingManager.buildEnvironmentActionIDs(state, action);
+    }
+
 	/**
 	 * This method is invoked each time the TESTAR starts the SUT to generate a new sequence.
 	 * This can be used for example for bypassing a login screen by filling the username and password
