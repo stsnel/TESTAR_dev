@@ -1,7 +1,7 @@
 /***************************************************************************************************
  *
- * Copyright (c) 2018, 2019 Open Universiteit - www.ou.nl
- * Copyright (c) 2019 Universitat Politecnica de Valencia - www.upv.es
+ * Copyright (c) 2018 - 2021 Open Universiteit - www.ou.nl
+ * Copyright (c) 2018 - 2021 Universitat Politecnica de Valencia - www.upv.es
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -32,6 +32,7 @@
 package nl.ou.testar.HtmlReporting;
 
 import nl.ou.testar.a11y.reporting.HTMLReporter;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.fruit.alayer.Action;
 import org.fruit.alayer.State;
 import org.fruit.alayer.Tags;
@@ -42,7 +43,7 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.util.Set;
 
-public class HtmlSequenceReport {
+public class HtmlSequenceReport implements Reporting{
 
     private boolean firstStateAdded = false;
     private boolean firstActionsAdded = false;
@@ -67,15 +68,41 @@ public class HtmlSequenceReport {
             //TODO put filename into settings, name with sequence number
             // creating a new file for the report
             String filename = OutputStructure.htmlOutputDir + File.separator + OutputStructure.startInnerLoopDateString+"_"
-            		+ OutputStructure.executedSUTname + REPORT_FILENAME_MID + OutputStructure.sequenceInnerLoopCount
-            		+ REPORT_FILENAME_AFT;
-            
+                    + OutputStructure.executedSUTname + REPORT_FILENAME_MID + OutputStructure.sequenceInnerLoopCount
+                    + REPORT_FILENAME_AFT;
+
             out = new PrintWriter(filename, HTMLReporter.CHARSET);
             for(String s:HEADER){
                 write(s);
             }
-            write("<h1>TESTAR execution sequence report for sequence "+OutputStructure.sequenceInnerLoopCount+"</h1>");
+
+            write("<h1>TESTAR execution sequence report for sequence " + OutputStructure.sequenceInnerLoopCount + "</h1>");
+
         }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Constructor for Replay mode. 
+     * 
+     * @param mode
+     * @param pathReplayedSequence
+     */
+    public HtmlSequenceReport(String pathReplayedSequence) {
+        try {
+            String filename = OutputStructure.htmlOutputDir + File.separator + OutputStructure.startInnerLoopDateString+"_"
+                    + OutputStructure.executedSUTname + REPORT_FILENAME_MID + OutputStructure.sequenceInnerLoopCount
+                    + REPORT_FILENAME_AFT;
+
+            out = new PrintWriter(filename, HTMLReporter.CHARSET);
+            for(String s:HEADER) {
+                write(s);
+            }
+
+            write("<h1>TESTAR replay sequence report for file " + pathReplayedSequence + "</h1>");
+
+        } catch (Exception e){
             e.printStackTrace();
         }
     }
@@ -147,8 +174,14 @@ public class HtmlSequenceReport {
             write("<li>");
 //            try{if(action.get(Tags.Role)!=null) write("--Role="+action.get(Tags.Role));}catch(Exception e){}
 //            try{if(action.get(Tags.Targets)!=null) write("--Targets="+action.get(Tags.Targets));}catch(Exception e){}
-            try{if(action.get(Tags.Desc)!=null) write("<b>"+action.get(Tags.Desc)+"</b>  || ");}catch(Exception e){}
-            write(action.toString());
+            try{
+            	if(action.get(Tags.Desc)!=null) {
+            		String escaped = StringEscapeUtils.escapeHtml(action.get(Tags.Desc));
+            		write("<b>"+ escaped +"</b>  || ");
+            	}
+            }catch(Exception e){}
+
+            write(StringEscapeUtils.escapeHtml(action.toString()));
             write(" || ConcreteId="+action.get(Tags.ConcreteIDCustom, "NoConcreteIdAvailable"));
             try{if(action.get(Tags.AbstractID)!=null) write(" || AbstractId="+action.get(Tags.AbstractID));}catch(Exception e){}
             try{if(action.get(Tags.Abstract_R_ID)!=null) write(" || Abstract_R_ID="+action.get(Tags.Abstract_R_ID));}catch(Exception e){}
@@ -165,30 +198,57 @@ public class HtmlSequenceReport {
             write("<h4>Set of actions (all unvisited - a new state):</h4><ul>");
             for(Action action:actions){
                 write("<li>");
-                try{if(action.get(Tags.Desc)!=null) write("<b>"+action.get(Tags.Desc)+"</b>");}catch(Exception e){}
-                write(" || ConcreteID="+action.get(Tags.ConcreteIDCustom, "NoConcreteIdAvailable")+" || "+action.toString());
+                
+                try{
+                	if(action.get(Tags.Desc)!=null) {
+                		String escaped = StringEscapeUtils.escapeHtml(action.get(Tags.Desc));
+                		write("<b>" + escaped + "</b>");
+                	}
+                }catch(Exception e){}
+
+                write(" || ConcreteID="+action.get(Tags.ConcreteIDCustom, "NoConcreteIdAvailable")
+                + " || " + StringEscapeUtils.escapeHtml(action.toString()));
+                
                 write("</li>");
             }
             write("</ul>");
         }else if(concreteIdsOfUnvisitedActions.size()==0){
             write("<h4>All actions have been visited, set of available actions:</h4><ul>");
             for(Action action:actions){
-                write("<li>");
-                try{if(action.get(Tags.Desc)!=null) write("<b>"+action.get(Tags.Desc)+"</b>");}catch(Exception e){}
-                write(" || ConcreteID="+action.get(Tags.ConcreteIDCustom, "NoConcreteIdAvailable")+" || "+action.toString());
-                write("</li>");
+            	write("<li>");
+
+            	try{
+            		if(action.get(Tags.Desc)!=null) {
+            			String escaped = StringEscapeUtils.escapeHtml(action.get(Tags.Desc));
+            			write("<b>" + escaped + "</b>");
+            		}
+            	}catch(Exception e){}
+
+            	write(" || ConcreteID="+action.get(Tags.ConcreteIDCustom, "NoConcreteIdAvailable")
+            	+ " || " + StringEscapeUtils.escapeHtml(action.toString()));
+
+            	write("</li>");
             }
             write("</ul>");
         }else{
             write("<h4>"+concreteIdsOfUnvisitedActions.size()+" out of "+actions.size()+" actions have not been visited yet:</h4><ul>");
             for(Action action:actions){
-                if(concreteIdsOfUnvisitedActions.contains(action.get(Tags.ConcreteIDCustom, "NoConcreteIdAvailable"))){
-                    //action is unvisited -> showing:
-                    write("<li>");
-                    try{if(action.get(Tags.Desc)!=null) write("<b>"+action.get(Tags.Desc)+"</b>");}catch(Exception e){}
-                    write(" || ConcreteID="+action.get(Tags.ConcreteIDCustom, "NoConcreteIdAvailable")+" || "+action.toString());
-                    write("</li>");
-                }
+            	if(concreteIdsOfUnvisitedActions.contains(action.get(Tags.ConcreteIDCustom, "NoConcreteIdAvailable"))){
+            		//action is unvisited -> showing:
+            		write("<li>");
+
+            		try{
+            			if(action.get(Tags.Desc)!=null) {
+            				String escaped = StringEscapeUtils.escapeHtml(action.get(Tags.Desc));
+            				write("<b>" + escaped + "</b>");
+            			}
+            		}catch(Exception e){}
+
+            		write(" || ConcreteID="+action.get(Tags.ConcreteIDCustom, "NoConcreteIdAvailable")
+            		+ " || " + StringEscapeUtils.escapeHtml(action.toString()));
+
+            		write("</li>");
+            	}
             }
             write("</ul>");
         }
@@ -211,7 +271,14 @@ public class HtmlSequenceReport {
 //        System.out.println("path="+actionPath);
         write("<h2>Selected Action "+innerLoopCounter+" leading to State "+innerLoopCounter+"\"</h2>");
         write("<h4>concreteID="+action.get(Tags.ConcreteIDCustom, "NoConcreteIdAvailable"));
-        try{if(action.get(Tags.Desc)!=null) write(" || "+action.get(Tags.Desc));}catch(Exception e){}
+
+        try{
+        	if(action.get(Tags.Desc)!=null) {
+        		String escaped = StringEscapeUtils.escapeHtml(action.get(Tags.Desc));
+        		write(" || "+ escaped);
+        	}
+        }catch(Exception e){}
+
         write("</h4>");
         if(actionPath.contains("./output")){
             actionPath = actionPath.replace("./output","..");
