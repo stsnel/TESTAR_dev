@@ -1,4 +1,4 @@
-
+apply plugin: 'java'
 subprojects {
     apply plugin: 'java'
     apply plugin: 'jacoco'
@@ -19,7 +19,8 @@ subprojects {
         mavenCentral()
     }
     dependencies {
-        testCompile group:'junit', name:'junit', version:'4.12'
+	// move this dependency to module level build.gradle files?
+        testImplementation 'junit:junit:4.13'
     }
 
     buildDir = new File('./target')
