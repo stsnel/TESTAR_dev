@@ -472,8 +472,9 @@ task runTestWebdriverSuspiciousTitle(type: Exec) {
     standardOutput = new ByteArrayOutputStream()
     group = 'test_testar_workflow'
     description ='runTestWebdriverSuspiciousTitle'
-    commandLine 'cmd', '/c', 'cd \\ && dir /s *chromedriver*'
+    commandLine 'cmd', '/c', 'cd C:\\ && dir /s *chromedriver*'
     doLast {
+        println 'debug print'
         println standardOutput.toString()
     }
 }
