@@ -141,9 +141,10 @@ jobs:
     - name: Prepare installed distribution of TESTAR with Gradle
       run: ./gradlew installDist
       
-    - name: Install latest Chrome
+    - name: Install dependencies
       run: |
         sudo apt update
+        sudo apt install xorg
         sudo apt --only-upgrade install google-chrome-stable
         google-chrome --version
         
