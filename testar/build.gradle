@@ -545,3 +545,23 @@ task runTestWebdriverUnreplayable(type: Exec) {
         }
     }
 }
+
+// Connect to para.testar.org and make a login inside a Linux environment
+task runTestWebdriverParabankLoginLinux(type: Exec) {
+	// Read command line output
+    standardOutput = new ByteArrayOutputStream()
+    group = 'test_testar_workflow'
+    description ='runTestWebdriverParabankLoginLinux'
+    workingDir 'target/install/testar/bin'
+    commandLine '/bin/sh', '-c', 'testar sse=test_gradle_workflow_webdriver_parabank AlwaysCompile=true ApplicationName="webdriver_login_linux" ShowVisualSettingsDialogOnStartup=false Mode=Generate Sequences=1 SequenceLength=1 ProtocolSpecificSetting_1=john ProtocolSpecificSetting_2=demo SUTConnectorValue=" ""/usr/local/bin/chromedriver"" ""https://www.ou.nl"" "'
+    doLast {
+        String output = standardOutput.toString()
+
+		// Check that output contains No problem detected. message to verify the correct execution
+        if(output.readLines().any{line->line.contains("No problem detected.")}) {
+            println "\n${output} \nTESTAR has been executed sucessfully"
+        } else {
+            throw new GradleException("\n${output} \nERROR: Executing TESTAR")
+        }
+    }
+}
