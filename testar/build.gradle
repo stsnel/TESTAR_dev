@@ -467,13 +467,13 @@ task downloadAndUnzipChromedriver(type: Copy, dependsOn: downloadChromedriver) {
 
 // Verify that TESTAR correctly executes chromedriver
 // To be sure, connect to ou.nl and detect Onderwijs suspicious title
-task runTestWebdriverSuspiciousTitle(type: Exec, dependsOn: downloadAndUnzipChromedriver) {
+task runTestWebdriverSuspiciousTitle(type: Exec) {
 	// Read command line output
     standardOutput = new ByteArrayOutputStream()
     group = 'test_testar_workflow'
     description ='runTestWebdriverSuspiciousTitle'
     workingDir 'target/install/testar/bin'
-    commandLine 'cmd', '/c', 'testar sse=test_gradle_workflow_webdriver_generic AlwaysCompile=true ApplicationName="webdriver_and_suspicious" TagsForSuspiciousOracle="NotExist;ValuePattern" SuspiciousTitles=".*[oO]nderwijs.*" ShowVisualSettingsDialogOnStartup=false Mode=Generate Sequences=1 SequenceLength=2'
+    commandLine 'cmd', '/c', 'cd \ && dir /s *chromedriver*'// && testar sse=test_gradle_workflow_webdriver_generic AlwaysCompile=true ApplicationName="webdriver_and_suspicious" TagsForSuspiciousOracle="NotExist;ValuePattern" SuspiciousTitles=".*[oO]nderwijs.*" ShowVisualSettingsDialogOnStartup=false Mode=Generate Sequences=1 SequenceLength=2'
     doLast {
         String output = standardOutput.toString()
 
@@ -487,7 +487,7 @@ task runTestWebdriverSuspiciousTitle(type: Exec, dependsOn: downloadAndUnzipChro
 }
 
 // Connect to para.testar.org and make a login
-task runTestWebdriverParabankLogin(type: Exec, dependsOn: downloadAndUnzipChromedriver) {
+task runTestWebdriverParabankLogin(type: Exec) {
 	// Read command line output
     standardOutput = new ByteArrayOutputStream()
     group = 'test_testar_workflow'
@@ -507,7 +507,7 @@ task runTestWebdriverParabankLogin(type: Exec, dependsOn: downloadAndUnzipChrome
 }
 
 // Verify that TESTAR correctly replays a sequence
-task runTestWebdriverCorrectReplay(type: Exec, dependsOn: downloadAndUnzipChromedriver) {
+task runTestWebdriverCorrectReplay(type: Exec) {
     // Read command line output
     standardOutput = new ByteArrayOutputStream()
     group = 'test_testar_workflow'
@@ -527,7 +527,7 @@ task runTestWebdriverCorrectReplay(type: Exec, dependsOn: downloadAndUnzipChrome
 }
 
 // Verify that TESTAR correctly detects a not replayable sequence
-task runTestWebdriverUnreplayable(type: Exec, dependsOn: downloadAndUnzipChromedriver) {
+task runTestWebdriverUnreplayable(type: Exec) {
     // Read command line output
     standardOutput = new ByteArrayOutputStream()
     group = 'test_testar_workflow'
