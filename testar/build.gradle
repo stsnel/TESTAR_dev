@@ -553,7 +553,7 @@ task runTestWebdriverParabankLoginLinux(type: Exec) {
     group = 'test_testar_workflow'
     description ='runTestWebdriverParabankLoginLinux'
     workingDir 'target/install/testar/bin'
-    commandLine '/bin/sh', '-c', 'testar sse=test_gradle_workflow_webdriver_parabank AlwaysCompile=true ApplicationName="webdriver_login_linux" ShowVisualSettingsDialogOnStartup=false Mode=Generate Sequences=1 SequenceLength=1 ProtocolSpecificSetting_1=john ProtocolSpecificSetting_2=demo SUTConnectorValue=" ""/usr/local/bin/chromedriver"" ""https://www.ou.nl"" "'
+    commandLine '/bin/sh', '-c', './testar sse=test_gradle_workflow_webdriver_parabank AlwaysCompile=true ApplicationName="webdriver_login_linux" ShowVisualSettingsDialogOnStartup=false Mode=Generate Sequences=1 SequenceLength=1 ProtocolSpecificSetting_1=john ProtocolSpecificSetting_2=demo SUTConnectorValue=" ""/usr/local/bin/chromedriver"" ""https://www.ou.nl"" "'
     doLast {
         String output = standardOutput.toString()
 
