@@ -157,4 +157,8 @@ public final class ConfigTags {
 
   public static final Tag<String> ApplicationUsername = Tag.from("ApplicationUsername", String.class);
   public static final Tag<String> ApplicationPassword = Tag.from("ApplicationPassword", String.class);
+  public static final Tag<String> ApplicationBaseURL = Tag.from("ApplicationBaseURL", String.class);
+  public static final Tag<String> DockerComposeDirectory = Tag.from("DockerComposeDirectory", String.class);
+  public static final Tag<String> CoverageContext = Tag.from("CoverageContext", String.class);
+  public static final Tag<String> LogContextPrefix = Tag.from("LogContextPrefix", String.class);
 }

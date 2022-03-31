@@ -34,7 +34,11 @@ import org.testar.monkey.ConfigTags;
 import org.testar.monkey.Pair;
 import org.testar.monkey.alayer.*;
 import org.testar.monkey.alayer.actions.AnnotatingActionCompiler;
+import org.testar.monkey.alayer.actions.CompoundAction;
+import org.testar.monkey.alayer.actions.KeyDown;
 import org.testar.monkey.alayer.actions.StdActionCompiler;
+import org.testar.monkey.alayer.actions.Type;
+import org.testar.monkey.alayer.devices.KBKeys;
 import org.testar.monkey.alayer.exceptions.ActionBuildException;
 import org.testar.monkey.alayer.exceptions.StateBuildException;
 import org.testar.monkey.alayer.exceptions.SystemStartException;
@@ -46,6 +50,10 @@ import org.testar.plugin.NativeLinker;
 import org.testar.monkey.Settings;
 import org.testar.protocols.WebdriverProtocol;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.InputStreamReader;
+import java.io.IOException;
 import java.util.*;
 
 import static org.testar.monkey.alayer.Tags.Blocked;
@@ -56,8 +64,9 @@ import static org.testar.monkey.alayer.webdriver.Constants.scrollThick;
 
 public class Protocol_webdriver_ckan1 extends WebdriverProtocol {
 
-	private String sutUrl,applicationUsername,applicationPassword;
+	private String sutUrl,applicationUsername,applicationPassword,applicationBaseURL, dockerComposeDirectory, logContextPrefix, coverageContext;
 	private int sutPort;
+	private int sequenceNumber = -1, actionNumber = -1;
 
 
 	/**
@@ -70,8 +79,6 @@ public class Protocol_webdriver_ckan1 extends WebdriverProtocol {
 	protected void initialize(Settings settings) {
 		super.initialize(settings);
 
-		System.out.println("Protocol_webdriver_ckan1.initialize()");
-	
 		/*
 		These settings are initialized in WebdriverProtocol:
 
@@ -99,7 +106,7 @@ public class Protocol_webdriver_ckan1 extends WebdriverProtocol {
 		WdDriver.fullScreen = true;
 
 		//Force webdriver to switch to a new tab if opened
-		//This feature can block the correct display of select dropdown elements 
+		//This feature can block the correct display of select dropdown elements
 		WdDriver.forceActivateTab = true;
 		*/
 
@@ -112,8 +119,17 @@ public class Protocol_webdriver_ckan1 extends WebdriverProtocol {
 
 		this.applicationUsername = settings.get(ConfigTags.ApplicationUsername);
 		this.applicationPassword = settings.get(ConfigTags.ApplicationPassword);
+		this.applicationBaseURL = settings.get(ConfigTags.ApplicationBaseURL);
+		this.dockerComposeDirectory = settings.get(ConfigTags.DockerComposeDirectory);
+		this.logContextPrefix = settings.get(ConfigTags.LogContextPrefix);
+		this.coverageContext = settings.get(ConfigTags.CoverageContext);
 		System.out.println("Application username is " + this.applicationUsername);
 		System.out.println("Application password is " + this.applicationPassword);
+		System.out.println("Application base URL is " + this.applicationBaseURL);
+		System.out.println("Docker compose directory is " + this.dockerComposeDirectory);
+		System.out.println("Log context prefix is " + this.logContextPrefix);
+		System.out.println("Coverage context is  " + this.coverageContext);
+
 
 		// List of attributes to identify and close policy popups
 		// Set to null to disable this feature
@@ -121,6 +137,10 @@ public class Protocol_webdriver_ckan1 extends WebdriverProtocol {
 		policyAttributes = new HashMap<String, String>() {{
 			put("class", "lfr-btn-label");
 		}};
+
+		// Pull latest versions of CKAN SUT images, and remove any previously saved data
+		initializeCkanImages();
+		fullResetCKAN();
 	}
 
 	/**
@@ -137,7 +157,111 @@ public class Protocol_webdriver_ckan1 extends WebdriverProtocol {
 	 */
 	@Override
 	protected SUT startSystem() throws SystemStartException {
-		return super.startSystem();
+		System.out.println("startSystem called ...");
+		startCkan();
+
+		SUT sut =  super.startSystem();
+
+		return sut;
+	}
+
+	/** Initializes the CKAN SUT using Docker Compose */
+    private void initializeCkanImages() {
+		String[] pruneCommand = {"docker", "image", "prune", "-f"};
+		runDockerCommand(pruneCommand);
+		String[] pullCommand = {"docker-compose", "pull"};
+		runDockerCommand(pullCommand);
+    }
+
+	/** Starts the CKAN SUT using Docker Compose */
+    private void startCkan() {
+		String[] command = {"docker-compose", "up", "--force-recreate", "--build", "-d"};
+		runDockerCommand(command);
+		if ( ! GenericProtocolUtils.waitForURL(applicationBaseURL, 300, 5, 200) ) {
+			System.out.println("Error: did not succeed in bringing up SUT.");
+		}
+		else {
+			setCoverageContext();
+		}
+	}
+
+	private void setCoverageContext() {
+		String setContextURL = applicationBaseURL + "/testar-covcontext/" + this.coverageContext;
+		System.out.println("Setting coverage context ...");
+		if (! GenericProtocolUtils.waitForURL(setContextURL, 60, 5, 200) )  {
+			System.out.println("Error: did not succeed in setting coverage context.");
+		}
+	}
+
+	private void setLogContext() {
+		String context = this.logContextPrefix + "-" + Integer.toString(sequenceNumber) + "-" +
+			Integer.toString(actionNumber);
+		System.out.println("Setting log context to " + context + " ...");
+		String setContextURL = applicationBaseURL + "/testar-logcontext/" + context;
+		if (! GenericProtocolUtils.waitForURL(setContextURL, 60, 5, 200) )  {
+			System.out.println("Error: did not succeed in setting log context for context "
+				+ context + ".");
+		}
+	}
+
+    /** Stops the CKAN SUT using Docker Compose */
+	private void stopCkan() {
+		String[] command = {"docker-compose", "down"};
+		runDockerCommand(command);
+	}
+
+	/** Resets all state of the CKAN SUT (application state, string extractor / log state,
+	 *  coverage state) */
+	private void fullResetCKAN() {
+		String[] fullStopCommand = { "docker-compose", "down", "-v"};
+		runDockerCommand(fullStopCommand);
+		String[] containerPruneCommand = {"docker", "container", "prune", "-f"};
+		runDockerCommand(containerPruneCommand);
+		String[] volumePruneCommand = {"docker", "volume", "prune", "-f"};
+		runDockerCommand(volumePruneCommand);
+	}
+
+	/** Resets application state of CKAN, but not the coverage data. */
+	private void resetBetweenSequencesCKAN() {
+		stopCkan();
+		removeCkanApplicationVolumes();
+		startCkan();
+	}
+
+	/** Removes all application state Docker volumes */
+	private void removeCkanApplicationVolumes() {
+		String[] applicationVolumes = { "run_ckan_config", "run_ckan_home", "run_ckan_storage",
+		 "runpg_data", "run_solr_data"};
+		for (String volume : applicationVolumes ) {
+			String[] command = {"docker", "volume", "rm", volume};
+			runDockerCommand(command);
+		}
+	}
+
+    /** Runs a docker command in the Docker Compose Directory */
+	private void runDockerCommand(String[] command) {
+		ProcessBuilder builder = new ProcessBuilder(command);
+		System.out.println("Protocol executing command: " + String.join(" ", command));
+		builder = builder.directory(new File(dockerComposeDirectory));
+		builder.redirectErrorStream(true);
+		try {
+			synchronized(builder) {
+				Process p = builder.start();
+				BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+				String line;
+				while ((line = reader.readLine()) != null)
+					System.out.println("Command output: " + line);
+				p.waitFor();
+			}
+		}
+		catch (IOException ioe) {
+			System.out.println("Exception when starting command" + String.join(" ", command)
+				+ " " + ioe.toString());
+		}
+		catch (InterruptedException ie)  {
+			System.out.println("Exception when waiting for command" + String.join(" ", command)
+				+ " " + ie.toString());
+		}
 	}
 
 	/**
@@ -148,7 +272,41 @@ public class Protocol_webdriver_ckan1 extends WebdriverProtocol {
 	 */
 	@Override
 	protected void beginSequence(SUT system, State state) {
+		this.sequenceNumber++;
+		System.out.println("Begin sequence called for sequence " + Integer.toString(sequenceNumber));
+		this.actionNumber = 0;
 		super.beginSequence(system, state);
+
+		waitLeftClickAndTypeIntoWidgetWithMatchingTag("name","login", this.applicationUsername, state, system, 1, 0.5);
+
+		new CompoundAction.Builder ()
+		. add (new KeyDown ( KBKeys . VK_TAB ) ,0.5) // Tab to next field, which should be password field
+		. add (new Type (this.applicationPassword) ,0.1)
+		. add (new KeyDown ( KBKeys . VK_TAB ) ,0.5)
+		. add (new KeyDown ( KBKeys . VK_ENTER ) ,0.5). build()
+		. run ( system , null , 0.1);
+
+		/*
+		System.out.println("Enter login " + this.applicationUsername);
+		if (waitLeftClickAndTypeIntoWidgetWithMatchingTag("name","login", this.applicationUsername, state, system, 1, 0.5)) {
+			System.out.println("Entering user name succeeded.");
+		}
+		else {
+			System.out.println("Entering user name failed.");
+		}
+		if (waitLeftClickAndTypeIntoWidgetWithMatchingTag("name","password", this.applicationPassword, state, system, 1, 0.5) ) {
+			System.out.println("Entering password succeeded.");
+		}
+		else {
+			System.out.println("Entering password failed.");
+		}
+		if (waitAndLeftClickWidgetWithMatchingTag("class", "btn-primary", state, system, 1, 0.1) ) {
+			System.out.println("Clicking login button succeeded.");
+		}
+		else {
+			System.out.println("Clicking login button failed.");
+		}
+		*/
 	}
 
 	/**
@@ -201,6 +359,7 @@ public class Protocol_webdriver_ckan1 extends WebdriverProtocol {
 	 */
 	@Override
 	protected Set<Action> deriveActions(SUT system, State state) throws ActionBuildException {
+		System.out.println("deriveActions running ...");
 		// Kill unwanted processes, force SUT to foreground
 		Set<Action> actions = super.deriveActions(system, state);
 		Set<Action> filteredActions = new HashSet<>();
@@ -266,7 +425,7 @@ public class Protocol_webdriver_ckan1 extends WebdriverProtocol {
 		//if(actions.isEmpty()) {
 		//	return new HashSet<>(Collections.singletonList(new WdHistoryBackAction()));
 		//}
-		
+
 		// If we have forced actions, prioritize and filter the other ones
 		if (forcedActions != null && forcedActions.size() > 0) {
 			filteredActions = actions;
@@ -325,6 +484,8 @@ public class Protocol_webdriver_ckan1 extends WebdriverProtocol {
 	 */
 	@Override
 	protected Action selectAction(State state, Set<Action> actions) {
+		this.actionNumber++;
+		System.out.println("selectActions running for action " + Integer.toString(actionNumber));
 		return super.selectAction(state, actions);
 	}
 
@@ -338,6 +499,8 @@ public class Protocol_webdriver_ckan1 extends WebdriverProtocol {
 	 */
 	@Override
 	protected boolean executeAction(SUT system, State state, Action action) {
+		System.out.println("selectActions running for action " + Integer.toString(actionNumber));
+		setLogContext();
 		return super.executeAction(system, state, action);
 	}
 
@@ -358,7 +521,10 @@ public class Protocol_webdriver_ckan1 extends WebdriverProtocol {
 	 */
 	@Override
 	protected void finishSequence() {
+		System.out.println("Finish sequence called for sequence " + Integer.toString(sequenceNumber));
 		super.finishSequence();
+		resetBetweenSequencesCKAN();
+		startCkan();
 	}
 
 	/**
@@ -376,7 +542,7 @@ public class Protocol_webdriver_ckan1 extends WebdriverProtocol {
 	@Override
 	protected void initTestSession() {
 		super.initTestSession();
-		
+
 
 
 	}

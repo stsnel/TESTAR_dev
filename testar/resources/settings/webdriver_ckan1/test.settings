@@ -27,7 +27,10 @@ Mode = Spy
 # Example format for the dimensions and position : 1920x1000+1680+0
 #################################################################
 SUTConnector = WEB_DRIVER
-SUTConnectorValue = "C:\\Windows\\chromedriver.exe" "1920x900+0+0" "http://localhost:5000"
+# Windows:
+# SUTConnectorValue = "C:\\Windows\\chromedriver.exe" "1920x900+0+0" "http://localhost:5000/user/login"
+# Linux:
+SUTConnectorValue = "/usr/local/bin/chromedriver" "1920x900+0+0" "http://localhost:5000/user/login"
 
 #################################################################
 # Sequences
@@ -181,3 +184,7 @@ RefreshSpyCanvas = 1.0
 
 ApplicationUsername = tester
 ApplicationPassword = tester
+ApplicationBaseURL = http://localhost:5000
+DockerComposeDirectory = /data/studie/af/lightweight-codeanalysis/suts/ckan/run
+LogContextPrefix = tryout
+CoverageContext = tryout
