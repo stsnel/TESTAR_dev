@@ -28,6 +28,10 @@
  *
  */
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.json.JSONTokener;
+
 import org.testar.SutVisualization;
 import org.testar.GenericProtocolUtils;
 import org.testar.monkey.ConfigTags;
@@ -54,6 +58,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
 import java.io.IOException;
+import java.net.URL;
 import java.util.*;
 
 import static org.testar.monkey.alayer.Tags.Blocked;
@@ -202,6 +207,34 @@ public class Protocol_webdriver_ckan1 extends WebdriverProtocol {
 			System.out.println("Error: did not succeed in setting log context for context "
 				+ context + ".");
 		}
+	}
+
+	private void extractStrings() {
+		Vector<Map<String,String>> output = new Vector<>();
+		String queryUrl = this.applicationBaseURL + "/testar-extractstrings/" +
+			this.logContextPrefix + "-" + Integer.toString(sequenceNumber) + "-" +
+			Integer.toString(actionNumber);
+
+		try {
+			URL url = new URL(queryUrl);
+			JSONTokener tokener = new JSONTokener(url.openStream());
+			JSONArray root = new JSONArray(tokener);
+
+			for (int i = 0; i < root.length(); i++) {
+				 JSONArray inner = root.getJSONArray(i);
+				String type = inner.getString(0);
+				String value = inner.getString(1);
+				System.out.println("Extracted string " + type + " / " + value);
+				Map<String, String> innerMap = new HashMap<>();
+				innerMap.put("type", type);
+				innerMap.put("value", value);
+				output.add(innerMap);
+			}
+		}
+		catch (Exception e) {
+			System.out.println("Error during extracting strings: " + e.toString());
+		}
+		// TODO: put output in the state model. How?
 	}
 
     /** Stops the CKAN SUT using Docker Compose */
@@ -501,7 +534,9 @@ public class Protocol_webdriver_ckan1 extends WebdriverProtocol {
 	protected boolean executeAction(SUT system, State state, Action action) {
 		System.out.println("selectActions running for action " + Integer.toString(actionNumber));
 		setLogContext();
-		return super.executeAction(system, state, action);
+		boolean result =  super.executeAction(system, state, action);
+		extractStrings();
+		return result;
 	}
 
 	/**
