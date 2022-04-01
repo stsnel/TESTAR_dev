@@ -310,6 +310,7 @@ public class Protocol_webdriver_ckan1 extends WebdriverProtocol {
 		this.actionNumber = 0;
 		super.beginSequence(system, state);
 
+		/*
 		waitLeftClickAndTypeIntoWidgetWithMatchingTag("name","login", this.applicationUsername, state, system, 1, 0.5);
 
 		new CompoundAction.Builder ()
@@ -318,6 +319,7 @@ public class Protocol_webdriver_ckan1 extends WebdriverProtocol {
 		. add (new KeyDown ( KBKeys . VK_TAB ) ,0.5)
 		. add (new KeyDown ( KBKeys . VK_ENTER ) ,0.5). build()
 		. run ( system , null , 0.1);
+		*/
 
 		/*
 		System.out.println("Enter login " + this.applicationUsername);
