@@ -185,6 +185,7 @@ public final class ConfigTags {
   public static final Tag<Boolean> CarryOverCoverage = Tag.from("CarryOverCoverage", Boolean.class);
   public static final Tag<Boolean> ExportCoverage = Tag.from("ExportCoverage", Boolean.class);
   public static final Tag<String> CoverageExportDirectory = Tag.from("CoverageExportDirectory", String.class);
+  public static final Tag<Boolean> CodeAnalysisDebugMessages = Tag.from("CodeAnalysisDebugMessages", Boolean.class);
 
   // Tags for compound text input logic
   public static final Tag<Boolean> CompoundTextActionLogicEnabled = Tag.from("CompoundTextActionLogicEnabled", Boolean.class);

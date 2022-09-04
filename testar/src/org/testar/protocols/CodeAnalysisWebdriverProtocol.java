@@ -93,6 +93,7 @@ public class CodeAnalysisWebdriverProtocol extends DockerizedSUTWebdriverProtoco
 
 	protected String coverageContext,logContextPrefix,actionGetDataEndpoint;
     protected boolean setCoverageContext=false,setLogContext=false,processDataAfterAction=false;
+    protected boolean codeAnalysisDebugMessages=false;
     protected float fullStringRate=0.0f, typeMatchRate = 1.0f;
     protected int maxInputStrings = 1;
     protected int sequenceNumber = -1, actionNumber = -1;
@@ -120,6 +121,7 @@ public class CodeAnalysisWebdriverProtocol extends DockerizedSUTWebdriverProtoco
         this.maxInputStrings = settings.get(ConfigTags.MaxInputStrings);
         this.fullStringRate = settings.get(ConfigTags.FullStringRate);
         this.typeMatchRate = settings.get(ConfigTags.TypeMatchRate);
+        this.codeAnalysisDebugMessages = settings.get(ConfigTags.CodeAnalysisDebugMessages);
 
         assert(this.fullStringRate >= 0.0);
         assert(this.fullStringRate <= 1.0);
@@ -144,21 +146,38 @@ public class CodeAnalysisWebdriverProtocol extends DockerizedSUTWebdriverProtoco
 	}
 
     private void waitForSUT() {
+        if (codeAnalysisDebugMessages) {
+            logger.info("Code analysis before wait for SUT.");
+        }
 		if (! waitForURL(applicationBaseURL, 60, 5,  1, 200) )  {
 			logger.info("Error: did not succeed in waiting .");
 		}
+        if (codeAnalysisDebugMessages) {
+            logger.info("Code analysis after wait for SUT.");
+        }
 	}
 
     private void setCoverageContext() {
 		String setContextURL = this.applicationBaseURL + "/testar-covcontext/" + this.coverageContext;
 
+        if (codeAnalysisDebugMessages) {
+            logger.info("Code analysis before setting coverage context.");
+        }
+
 		if (! waitForURL(setContextURL, 60, 5, 1, 200) )  {
 			logger.info("Error: did not succeed in setting coverage context.");
 		}
+
+        if (codeAnalysisDebugMessages) {
+            logger.info("Code analysis after setting coverage context.");
+        }
 	}
 
     @Override
 	protected boolean executeAction(SUT system, State state, Action action) {
+        if (codeAnalysisDebugMessages) {
+            logger.info("Code analysis: start executeAction.");
+        }
 		if (this.instrumentationEnabled && this.setLogContext) {
             setLogContext();
         }
@@ -166,21 +185,36 @@ public class CodeAnalysisWebdriverProtocol extends DockerizedSUTWebdriverProtoco
         if (this.instrumentationEnabled && this.processDataAfterAction ) {
             retrieveSUTDataAfterAction();
         }
+        if (codeAnalysisDebugMessages) {
+            logger.info("Code analysis before end executeAction.");
+        }
         return result;
     }
 
     private void setLogContext() {
 		String context = this.logContextPrefix + "-" + Integer.toString(sequenceNumber) + "-" +
 			Integer.toString(actionNumber);
+        if (codeAnalysisDebugMessages) {
+                logger.info("Code analysis before setting log context.");
+            }
 		String setContextURL = applicationBaseURL + "/testar-logcontext/" + context;
 		if ( ! waitForURL(setContextURL, 60, 5, 1, 200) )  {
 			logger.error("Error: did not succeed in setting log context for context "
 				+ context + ".");
 		}
+        if (codeAnalysisDebugMessages) {
+            logger.info("Code analysis before setting coverage context.");
+        }
+        if (codeAnalysisDebugMessages) {
+            logger.info("Code analysis afer setting log context.");
+        }
 	}
 
     @Override
 	protected void beginSequence(SUT system, State state) {
+        if (codeAnalysisDebugMessages) {
+            logger.info("Code analysis start beginSequence.");
+        }
         this.sequenceNumber++;
         this.actionNumber = 0;
 
@@ -202,10 +236,18 @@ public class CodeAnalysisWebdriverProtocol extends DockerizedSUTWebdriverProtoco
                 }
             }
         }
+
+        if (codeAnalysisDebugMessages) {
+            logger.info("Code analysis end beginSequence.");
+        }
     }
 
     @Override
     protected void finishSequence(){
+
+        if (codeAnalysisDebugMessages) {
+            logger.info("Code analysis begin finishSequence.");
+        }
 
         logger.info("Sequence " + String.valueOf(sequenceNumber ) + " finishing.");
 
@@ -228,12 +270,19 @@ public class CodeAnalysisWebdriverProtocol extends DockerizedSUTWebdriverProtoco
                     logger.error("Unable to export coverage data. Exception: " + e.toString());
                 }
             }
-
         }
+
         super.finishSequence();
+
+        if (codeAnalysisDebugMessages) {
+            logger.info("Code analysis end finishSequence.");
+        }
     }
 
     protected void exportCoverageData() throws IOException {
+        if (codeAnalysisDebugMessages) {
+            logger.info("Code analysis before exporting coverage data.");
+        }
         String filename = settings.get(ConfigTags.CoverageExportDirectory ) + "/coverage-" +
             String.valueOf(sequenceNumber) + "-" + String.valueOf (System.currentTimeMillis()) + ".dump";
         BufferedWriter w = new BufferedWriter(new FileWriter(new File(filename)));
@@ -241,15 +290,27 @@ public class CodeAnalysisWebdriverProtocol extends DockerizedSUTWebdriverProtoco
         w.flush();
         w.close();
         logger.info("Exported coverage data to " + filename + ".");
+        if (codeAnalysisDebugMessages) {
+            logger.info("Code analysis after exporting coverage data.");
+        }
     }
 
     @Override
 	protected Action selectAction(State state, Set<Action> actions) {
+        if (codeAnalysisDebugMessages) {
+            logger.info("Code analysis start selectAction.");
+        }
 		this.actionNumber++;
+        if (codeAnalysisDebugMessages) {
+            logger.info("Code analysis end selectAction.");
+        }
         return super.selectAction(state, actions);
     }
 
     protected void retrieveSUTDataAfterAction() {
+        if (codeAnalysisDebugMessages) {
+            logger.info("Code analysis start retrieveSUTDataAfterAction.");
+        }
 		String queryUrl = this.applicationBaseURL + this.actionGetDataEndpoint + "/" +
 			this.logContextPrefix + "-" + Integer.toString(sequenceNumber) + "-" +
 			Integer.toString(actionNumber);
@@ -263,7 +324,9 @@ public class CodeAnalysisWebdriverProtocol extends DockerizedSUTWebdriverProtoco
 			logger.info("Error during extracting action data from SUT: ");
             e.printStackTrace(System.out);
 		}
-
+        if (codeAnalysisDebugMessages) {
+            logger.info("Code analysis end retrieveSUTDataAfterAction.");
+        }
     }
 
     protected void processSUTDataAfterAction(JSONTokener tokener) {

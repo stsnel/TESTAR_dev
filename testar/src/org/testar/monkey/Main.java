@@ -531,6 +531,7 @@ public class Main {
 			defaults.add(Pair.from(CarryOverCoverage, true));
 			defaults.add(Pair.from(ExportCoverage, true));
 			defaults.add(Pair.from(CoverageExportDirectory, "/tmp"));
+			defaults.add(Pair.from(CodeAnalysisDebugMessages, false));
 			// End defaults CodeAnalysisWebdriverProtocol
 
 			// Defaults for compound text input logic
