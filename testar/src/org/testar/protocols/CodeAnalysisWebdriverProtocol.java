@@ -34,16 +34,21 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
-import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.IOException;
 import java.io.ObjectInputFilter.Config;
 import java.io.OutputStream;
+import java.io.Reader;
 
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
+
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import java.util.Map;
 import java.util.Set;
@@ -312,22 +317,49 @@ public class CodeAnalysisWebdriverProtocol extends DockerizedSUTWebdriverProtoco
         if (codeAnalysisDebugMessages) {
             logger.info("Code analysis start retrieveSUTDataAfterAction.");
         }
-		String queryUrl = this.applicationBaseURL + this.actionGetDataEndpoint + "/" +
-			this.logContextPrefix + "-" + Integer.toString(sequenceNumber) + "-" +
-			Integer.toString(actionNumber);
-
-		try {
-			URL url = new URL(queryUrl);
-			JSONTokener tokener = new JSONTokener(url.openStream());
-            processSUTDataAfterAction(tokener);
+        int tryNumber =0;
+        while ( tryNumber < 3) {
+            tryNumber++;
+            if (codeAnalysisDebugMessages) {
+                logger.info("Read SUT data try " + tryNumber);
+            }
+            try {
+                tryRetrieveSUTDataAfterAction();
+                break;
+            }
+            catch (Exception e) {
+                logger.error("Retrieving SUT data failed with exception" + e.toString());
+            }
         }
-        catch (Exception e) {
-			logger.info("Error during extracting action data from SUT: ");
-            e.printStackTrace(System.out);
-		}
         if (codeAnalysisDebugMessages) {
             logger.info("Code analysis end retrieveSUTDataAfterAction.");
         }
+    }
+
+    private void tryRetrieveSUTDataAfterAction() throws Exception {
+        String queryUrl = this.applicationBaseURL + this.actionGetDataEndpoint + "/" +
+            this.logContextPrefix + "-" + Integer.toString(sequenceNumber) + "-" +
+            Integer.toString(actionNumber);
+        if (codeAnalysisDebugMessages) {
+            logger.info("Will try to retrieve SUT data after action from URL " + queryUrl);
+        }
+        Integer.toString(actionNumber);
+        URL url = new URL(queryUrl);
+        InputStream inputStream = url.openStream();
+        StringBuilder sutData = new StringBuilder();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, Charset.forName(StandardCharsets.UTF_8.name())));
+        String l = null;
+        while ((l = reader.readLine()) != null) {
+            sutData.append(l);
+            if (codeAnalysisDebugMessages) {
+                logger.info("Read SUT data line: "+ l);
+            }
+        }
+        if (codeAnalysisDebugMessages) {
+            logger.info("Finished reading SUT data after action.");
+        }
+        JSONTokener tokener = new JSONTokener(sutData.toString());
+        processSUTDataAfterAction(tokener);
     }
 
     protected void processSUTDataAfterAction(JSONTokener tokener) {
