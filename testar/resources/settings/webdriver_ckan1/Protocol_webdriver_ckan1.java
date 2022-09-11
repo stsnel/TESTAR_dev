@@ -431,15 +431,22 @@ public class Protocol_webdriver_ckan1 extends CodeAnalysisWebdriverProtocol {
 	}
 
 	protected Action selectAction(State state, Set<Action> actions){
+		Action selectedAction = null;
 		Assert.isTrue(actions != null && !actions.isEmpty());
+		if (codeAnalysisDebugMessages) {
+            logger.info("CKAN1 start selectAction.");
+        }
+        this.actionNumber++;
 		if ( useCustomActionSelection()  ) {
-			return selector.selectAction(actions);
+			selectedAction = selector.selectAction(actions);
 		}
 		else {
-			return RandomActionSelector.selectAction(actions);
+			selectedAction = RandomActionSelector.selectAction(actions);
 		}
-
-}
-
+		if (codeAnalysisDebugMessages) {
+            logger.info("CKAN1 end selectAction.");
+        }
+		return selectedAction;
+	}
 
 }
