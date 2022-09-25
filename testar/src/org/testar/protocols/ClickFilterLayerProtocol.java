@@ -42,6 +42,7 @@ import org.testar.monkey.alayer.State;
 import org.testar.monkey.alayer.Widget;
 import org.testar.monkey.alayer.devices.KBKeys;
 import org.testar.monkey.DefaultProtocol;
+import org.testar.monkey.Settings;
 
 import org.testar.managers.DataManager;
 import org.testar.managers.FilteringManager;
@@ -73,10 +74,14 @@ public class ClickFilterLayerProtocol extends DefaultProtocol {
     protected DataManager dataManager;
 
     /**
-     * Constructor.
-     */
-	public ClickFilterLayerProtocol(){
-		super();
+	 * Initialize data manager and filtering manager in initialize method, rather
+	 * than constructor so that derived classes can perform any needed initialization
+	 * before the data manager and filtering manager are created.
+	 * @param settings
+	 */
+	@Override
+	protected void initialize(Settings settings) {
+		super.initialize(settings);
 		initializeDataManager();
 		initializeFilteringManager();
 	}
