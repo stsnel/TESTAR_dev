@@ -449,4 +449,9 @@ public class Protocol_webdriver_ckan1 extends CodeAnalysisWebdriverProtocol {
 		return selectedAction;
 	}
 
+	@Override
+    protected String getRandomText(Widget w){
+		return filteringManager.getRandomText(w);
+    }
+
 }
