@@ -43,7 +43,7 @@ public class InterestingStringsDataManager extends DataManager {
 
     Random rnd=new Random();
 
-    public InterestingStringsDataManager (float fullStringRate, float maxInputStrings, float typeMatchRate) {
+    public InterestingStringsDataManager (float fullStringRate, int maxInputStrings, float typeMatchRate) {
         super();
         assert(maxInputStrings >= maxInputStrings);
         this.maxInputStrings = maxInputStrings;
