@@ -45,12 +45,25 @@ public class InterestingStringsDataManager extends DataManager {
 
     public InterestingStringsDataManager (float fullStringRate, int maxInputStrings, float typeMatchRate) {
         super();
-        assert(maxInputStrings >= maxInputStrings);
         this.maxInputStrings = maxInputStrings;
-        assert(fullStringRate >= 0.0 && fullStringRate <= 1.0);
         this.fullStringRate = fullStringRate;
-        assert(typeMatchRate >= 0.0 && typeMatchRate <= 1.0);
         this.typeMatchRate = typeMatchRate;
+
+        if ( maxInputStrings < MIN_INPUT_STRINGS ) {
+          System.out.println("Invalid maxInputStrings value in data manager - less than MIN_INPUT_STRINGS.");
+          System.exit(1);
+        }
+
+        if ( this.fullStringRate < 0.0 || this.fullStringRate > 1.0 ) {
+          System.out.println("Invalid full string rate for InterestingStringsDataManagerl.");
+          System.exit(1);
+        }
+
+        if ( this.typeMatchRate < 0.0 || this.typeMatchRate > 1.0 ) {
+          System.out.println("Invalid type match rate for in InterestingStringsDataManager.");
+          System.exit(1);
+        }
+
     }
 
         /**

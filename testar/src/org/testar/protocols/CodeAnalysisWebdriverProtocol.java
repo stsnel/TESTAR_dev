@@ -128,11 +128,20 @@ public class CodeAnalysisWebdriverProtocol extends DockerizedSUTWebdriverProtoco
         this.typeMatchRate = settings.get(ConfigTags.TypeMatchRate);
         this.codeAnalysisDebugMessages = settings.get(ConfigTags.CodeAnalysisDebugMessages);
 
-        assert(this.fullStringRate >= 0.0);
-        assert(this.fullStringRate <= 1.0);
-        assert(this.typeMatchRate >= 0.0);
-        assert(this.typeMatchRate <= 1.0);
-        assert(this.maxInputStrings >= 2);
+        if ( this.fullStringRate < 0.0 || this.fullStringRate > 1.0 ) {
+            System.out.println("Invalid full string rate for in CodeAnalysisWebdriverProtocol.");
+            System.exit(1);
+        }
+
+        if ( this.typeMatchRate < 0.0 || this.typeMatchRate > 1.0 ) {
+            System.out.println("Invalid type match rate for in CodeAnalysisWebdriverProtocol.");
+            System.exit(1);
+        }
+
+        if ( this.maxInputStrings < 2 ) {
+            System.out.println("Invalid maxInputStrings for in CodeAnalysisWebdriverProtocol.");
+            System.exit(1);
+        }
 
         super.initialize(settings);
 
