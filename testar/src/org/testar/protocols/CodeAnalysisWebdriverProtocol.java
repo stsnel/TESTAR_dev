@@ -65,6 +65,9 @@ import org.testar.monkey.alayer.SUT;
 import org.testar.monkey.alayer.exceptions.SystemStartException;
 import org.testar.monkey.ConfigTags;
 import org.testar.monkey.Settings;
+import org.testar.instrumentation.InstrumentationInterface;
+import org.testar.instrumentation.InstrumentationWebUtils;
+import org.testar.instrumentation.WebInstrumentationInterface;
 
 /*
  * This protocol contains generic functionality for scriptless testing of web application SUTs
@@ -102,13 +105,14 @@ public class CodeAnalysisWebdriverProtocol extends DockerizedSUTWebdriverProtoco
     protected float fullStringRate=0.0f, typeMatchRate = 1.0f;
     protected int maxInputStrings = 1;
     protected int sequenceNumber = -1, actionNumber = -1;
-    protected StringBuffer coverageData=null;
+    protected StringBuffer coverageData= null;
+    protected InstrumentationInterface instrumentationInterface = null;
 
     // This boolean value can be used by the protocol to temporarily disable calls to the
     // instrumentation, e.g. during initial login actions.
     protected boolean instrumentationEnabled = true;
 
-	/**
+    /**
 	 * Called once during the life time of TESTAR
 	 * This method can be used to perform initial setup work
 	 *
@@ -116,8 +120,7 @@ public class CodeAnalysisWebdriverProtocol extends DockerizedSUTWebdriverProtoco
 	 */
 	@Override
 	protected void initialize(Settings settings) {
-
-		this.coverageContext = settings.get(ConfigTags.CoverageContext);
+        this.coverageContext = settings.get(ConfigTags.CoverageContext);
         this.logContextPrefix = settings.get(ConfigTags.LogContextPrefix);
         this.setLogContext = settings.get(ConfigTags.SetLogContext);
         this.setCoverageContext = settings.get(ConfigTags.SetCoverageContext);
@@ -145,13 +148,14 @@ public class CodeAnalysisWebdriverProtocol extends DockerizedSUTWebdriverProtoco
 
         super.initialize(settings);
 
+        this.instrumentationInterface = new WebInstrumentationInterface(applicationBaseURL, codeAnalysisDebugMessages);
 	}
 
     @Override
 	protected SUT startSystem() throws SystemStartException {
         SUT sut = super.startSystem();
         if ( this.instrumentationEnabled && this.setCoverageContext ) {
-            setCoverageContext();
+            instrumentationInterface.setCoverageContext(this.coverageContext);
         }
         else {
             waitForSUT();
@@ -163,7 +167,7 @@ public class CodeAnalysisWebdriverProtocol extends DockerizedSUTWebdriverProtoco
         if (codeAnalysisDebugMessages) {
             logger.info("Code analysis before wait for SUT.");
         }
-		if (! waitForURL(applicationBaseURL, 60, 5,  1, 200) )  {
+		if (! InstrumentationWebUtils.waitForURL(applicationBaseURL, 60, 5,  1, 200) )  {
 			logger.info("Error: did not succeed in waiting .");
 		}
         if (codeAnalysisDebugMessages) {
@@ -171,21 +175,6 @@ public class CodeAnalysisWebdriverProtocol extends DockerizedSUTWebdriverProtoco
         }
 	}
 
-    private void setCoverageContext() {
-		String setContextURL = this.applicationBaseURL + "/testar-covcontext/" + this.coverageContext;
-
-        if (codeAnalysisDebugMessages) {
-            logger.info("Code analysis before setting coverage context.");
-        }
-
-		if (! waitForURL(setContextURL, 60, 5, 1, 200) )  {
-			logger.info("Error: did not succeed in setting coverage context.");
-		}
-
-        if (codeAnalysisDebugMessages) {
-            logger.info("Code analysis after setting coverage context.");
-        }
-	}
 
     @Override
 	protected boolean executeAction(SUT system, State state, Action action) {
@@ -193,7 +182,7 @@ public class CodeAnalysisWebdriverProtocol extends DockerizedSUTWebdriverProtoco
             logger.info("Code analysis: start executeAction.");
         }
 		if (this.instrumentationEnabled && this.setLogContext) {
-            setLogContext();
+            instrumentationInterface.setLogContext(getCurrentLogContext());
         }
         boolean result =  super.executeAction(system, state, action);
         if (this.instrumentationEnabled && this.processDataAfterAction ) {
@@ -205,24 +194,10 @@ public class CodeAnalysisWebdriverProtocol extends DockerizedSUTWebdriverProtoco
         return result;
     }
 
-    private void setLogContext() {
-		String context = this.logContextPrefix + "-" + Integer.toString(sequenceNumber) + "-" +
-			Integer.toString(actionNumber);
-        if (codeAnalysisDebugMessages) {
-                logger.info("Code analysis before setting log context.");
-            }
-		String setContextURL = applicationBaseURL + "/testar-logcontext/" + context;
-		if ( ! waitForURL(setContextURL, 60, 5, 1, 200) )  {
-			logger.error("Error: did not succeed in setting log context for context "
-				+ context + ".");
-		}
-        if (codeAnalysisDebugMessages) {
-            logger.info("Code analysis before setting coverage context.");
-        }
-        if (codeAnalysisDebugMessages) {
-            logger.info("Code analysis afer setting log context.");
-        }
-	}
+    protected String getCurrentLogContext() {
+        return this.logContextPrefix + "-" + Integer.toString(sequenceNumber) + "-" +
+            Integer.toString(actionNumber);
+    }
 
     @Override
 	protected void beginSequence(SUT system, State state) {
@@ -241,13 +216,7 @@ public class CodeAnalysisWebdriverProtocol extends DockerizedSUTWebdriverProtoco
                 logger.info("No coverage data available. Not loading it into SUT.");
             }
             else {
-                logger.info("Coverage data length to be imported is "+ coverageData.length());
-                if ( postRequest( applicationBaseURL + "/testar-importdata", 600, 60, 5, 200, coverageData) ) {
-                    logger.info("Error: transmitted coverage data to SUT.");
-                }
-                else {
-                    logger.error("Error: did not succeed in loading coverage data.");
-                }
+                instrumentationInterface.importCoverage(coverageData);
             }
         }
 
@@ -266,7 +235,7 @@ public class CodeAnalysisWebdriverProtocol extends DockerizedSUTWebdriverProtoco
         logger.info("Sequence " + String.valueOf(sequenceNumber ) + " finishing.");
 
         if ( settings.get(ConfigTags.CarryOverCoverage) || settings.get(ConfigTags.ExportCoverage ) ) {
-            coverageData = getRequest ( applicationBaseURL + "/testar-clearlog-exportdata", 300, 60, 5, 200);
+            coverageData = instrumentationInterface.exportCoverage();
             if (coverageData == null ) {
                 logger.error("Failed to export coverage data at end of sequence.");
             }
@@ -278,10 +247,10 @@ public class CodeAnalysisWebdriverProtocol extends DockerizedSUTWebdriverProtoco
             }
             else {
                 try {
-                    exportCoverageData();
+                    storeCoverageData();
                 }
                 catch (IOException e) {
-                    logger.error("Unable to export coverage data. Exception: " + e.toString());
+                    logger.error("Unable to store coverage data. Exception: " + e.toString());
                 }
             }
         }
@@ -293,9 +262,9 @@ public class CodeAnalysisWebdriverProtocol extends DockerizedSUTWebdriverProtoco
         }
     }
 
-    protected void exportCoverageData() throws IOException {
+    protected void storeCoverageData() throws IOException {
         if (codeAnalysisDebugMessages) {
-            logger.info("Code analysis before exporting coverage data.");
+            logger.info("Code analysis before storing coverage data.");
         }
         String filename = settings.get(ConfigTags.CoverageExportDirectory ) + "/coverage-" +
             String.valueOf(sequenceNumber) + "-" + String.valueOf (System.currentTimeMillis()) + ".dump";
@@ -303,9 +272,9 @@ public class CodeAnalysisWebdriverProtocol extends DockerizedSUTWebdriverProtoco
         w.write(coverageData.toString());
         w.flush();
         w.close();
-        logger.info("Exported coverage data to " + filename + ".");
+        logger.info("Stored coverage data to " + filename + ".");
         if (codeAnalysisDebugMessages) {
-            logger.info("Code analysis after exporting coverage data.");
+            logger.info("Code analysis after storing coverage data.");
         }
     }
 
@@ -323,50 +292,7 @@ public class CodeAnalysisWebdriverProtocol extends DockerizedSUTWebdriverProtoco
     }
 
     protected void retrieveSUTDataAfterAction() {
-        if (codeAnalysisDebugMessages) {
-            logger.info("Code analysis start retrieveSUTDataAfterAction.");
-        }
-        int tryNumber =0;
-        while ( tryNumber < 3) {
-            tryNumber++;
-            if (codeAnalysisDebugMessages) {
-                logger.info("Read SUT data try " + tryNumber);
-            }
-            try {
-                tryRetrieveSUTDataAfterAction();
-                break;
-            }
-            catch (Exception e) {
-                logger.error("Retrieving SUT data failed with exception" + e.toString());
-            }
-        }
-        if (codeAnalysisDebugMessages) {
-            logger.info("Code analysis end retrieveSUTDataAfterAction.");
-        }
-    }
-
-    private void tryRetrieveSUTDataAfterAction() throws Exception {
-        String queryUrl = this.applicationBaseURL + this.actionGetDataEndpoint + "/" +
-            this.logContextPrefix + "-" + Integer.toString(sequenceNumber) + "-" +
-            Integer.toString(actionNumber);
-        if (codeAnalysisDebugMessages) {
-            logger.info("Will try to retrieve SUT data after action from URL " + queryUrl);
-        }
-        Integer.toString(actionNumber);
-        URL url = new URL(queryUrl);
-        InputStream inputStream = url.openStream();
-        StringBuilder sutData = new StringBuilder();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, Charset.forName(StandardCharsets.UTF_8.name())));
-        String l = null;
-        while ((l = reader.readLine()) != null) {
-            sutData.append(l);
-            if (codeAnalysisDebugMessages) {
-                logger.info("Read SUT data line: "+ l);
-            }
-        }
-        if (codeAnalysisDebugMessages) {
-            logger.info("Finished reading SUT data after action.");
-        }
+        StringBuffer sutData = instrumentationInterface.extractStrings(getCurrentLogContext());
         JSONTokener tokener = new JSONTokener(sutData.toString());
         processSUTDataAfterAction(tokener);
     }
@@ -375,163 +301,5 @@ public class CodeAnalysisWebdriverProtocol extends DockerizedSUTWebdriverProtoco
         // Left to be implemented in subclass, in case ProcessDataAfterAction
         // is set to true in the settings.
     }
-
-
-    /**
-     * Waits for requests to a particular URL to return a particular status code, with multiple retries.
-     *
-     * @param url_string URL to send requests to
-     * @param maxWaitTime Approximate maximum time to wait, in seconds
-     * @param timeout Timeout for requests, in seconds
-     * @param retryTime Approximate time between retries, in seconds
-     * @param expectedStatusCode return
-     * @return boolean value that shows whether the request returned the expected status code
-     * @throws MalformedURLException
-     * @throws IOException
-     * @throws ProtocolException
-     */
-    public static boolean waitForURL(String url_string, int maxWaitTime, int timeout, int retryTime, int expectedStatusCode) {
-        long beginTime = System.currentTimeMillis() / 1000L;
-        long currentTime = beginTime;
-        Logger logger = LogManager.getLogger();
-        while ( ( currentTime = System.currentTimeMillis() / 1000L ) < ( beginTime + maxWaitTime) ) {
-        try {
-                URL url = new URL(url_string);
-                HttpURLConnection con = (HttpURLConnection) url.openConnection();
-                con.setRequestMethod("GET");
-                con.setConnectTimeout(timeout*1000);
-                con.setReadTimeout(timeout*1000);
-                int status = con.getResponseCode();
-                logger.info("Status is " + status);
-            if ( status == expectedStatusCode ) {
-                logger.info("Waiting for " + url_string + " finished.");
-                return true;
-            }
-            else
-            {  logger.info("Info: unexpected status code " + Integer.toString(status) +
-                    " while waiting for " + url_string);
-            }
-        }
-        catch ( SocketTimeoutException ste) {
-            logger.info("info: waiting for " + url_string + " ...");
-            continue;
-        }
-        catch ( Exception e) {
-            logger.info("info: generic exception while waiting for " + url_string +
-                    ": " + e.toString() );
-            logger.info(Long.toString(currentTime));
-        }
-        logger.info("info: sleeping between retries for " + url_string + " ...");
-        try {
-         Thread.sleep((long)retryTime*1000);
-        }
-        catch (InterruptedException ie) {
-            logger.info("Sleep between retries for " + url_string + " was interrupted.");
-        }
-        }
-        logger.info("info: max wait time expired while waiting for " + url_string + " ...");
-        return false;
-    }
-
-    public static StringBuffer getRequest(String url_string, int maxWaitTime, int timeout,  int retryTime, int expectedStatusCode) {
-        long beginTime = System.currentTimeMillis() / 1000L;
-        long currentTime = beginTime;
-        Logger logger = LogManager.getLogger();
-        while ( ( currentTime = System.currentTimeMillis() / 1000L ) < ( beginTime + maxWaitTime) ) {
-        try {
-                URL url = new URL(url_string);
-                HttpURLConnection con = (HttpURLConnection) url.openConnection();
-                con.setRequestMethod("GET");
-                con.setConnectTimeout(timeout*1000);
-                con.setReadTimeout(timeout*1000);
-                int status = con.getResponseCode();
-                logger.info("Status is " + status);
-                if ( status == expectedStatusCode ) {
-                    BufferedReader in = new BufferedReader(
-                    new InputStreamReader(con.getInputStream()));
-                    String line;
-                    StringBuffer content = new StringBuffer();
-                    while ((line = in.readLine()) != null) {
-                        //logger.info("Read line from url " + url + ":" + line + "\n");
-                        content.append(line+"\n");
-                    }
-                    in.close();
-                    return content;
-                }
-                else
-                {  logger.info("Info: unexpected status code " + Integer.toString(status) +
-                        " while waiting for " + url_string);
-                }
-        }
-        catch ( SocketTimeoutException ste) {
-            logger.info("info: waiting for " + url_string + " ...");
-            continue;
-        }
-        catch ( Exception e) {
-            logger.info("info: generic exception while waiting for " + url_string +
-                    ": " + e.toString() );
-            logger.info(Long.toString(currentTime));
-        }
-        logger.info("info: sleeping between retries for " + url_string + " ...");
-        try {
-         Thread.sleep((long)retryTime * 1000);
-        }
-        catch (InterruptedException ie) {
-            logger.info("Sleep between retries for " + url_string + " was interrupted.");
-        }
-        }
-        logger.info("info: max wait time expired while waiting for " + url_string + " ...");
-        return null;
-
-    }
-
-    public static boolean postRequest(String url_string, int maxWaitTime, int timeout, int retryTime, int expectedStatusCode, StringBuffer content) {
-
-        long beginTime = System.currentTimeMillis() / 1000L;
-        long currentTime = beginTime;
-        Logger logger = LogManager.getLogger();
-        while ( ( currentTime = System.currentTimeMillis() / 1000L ) < ( beginTime + maxWaitTime) ) {
-        try {
-                URL url = new URL(url_string);
-                HttpURLConnection con = (HttpURLConnection) url.openConnection();
-                con.setRequestMethod("POST");
-                con.setConnectTimeout(timeout*1000);
-                con.setReadTimeout(timeout*1000);
-                con.setDoOutput(true);
-                con.setRequestProperty( "Content-Type", "text/plain" );
-                con.setRequestProperty( "Content-Length", String.valueOf(content.length()));
-                OutputStream os = con.getOutputStream();
-                os.write(content.toString().getBytes());
-                int status = con.getResponseCode();
-                logger.info("Status is " + status);
-                if ( status == expectedStatusCode ) {
-                    return true;
-                }
-                else
-                {  logger.info("Info: unexpected status code " + Integer.toString(status) +
-                        " while waiting for " + url_string);
-                }
-        }
-        catch ( SocketTimeoutException ste) {
-            logger.info("info: waiting for " + url_string + " ...");
-            continue;
-        }
-        catch ( Exception e) {
-            logger.info("info: generic exception while waiting for " + url_string +
-                    ": " + e.toString() );
-            logger.info(Long.toString(currentTime));
-        }
-        logger.info("info: sleeping between retries for " + url_string + " ...");
-        try {
-         Thread.sleep((long)retryTime*1000);
-        }
-        catch (InterruptedException ie) {
-            logger.info("Sleep between retries for " + url_string + " was interrupted.");
-        }
-        }
-        logger.info("info: max wait time expired while waiting for " + url_string + " ...");
-        return false;
-    }
-
 
 }
