@@ -158,7 +158,7 @@ public class DockerizedSUTWebdriverProtocol extends GenericWebdriverProtocol {
 	}
 
 	/** Runs a docker command in the Docker Compose Directory */
-	protected void runDockerCommand(String[] command) {
+	public void runDockerCommand(String[] command) {
 		ProcessBuilder builder = new ProcessBuilder(command);
 		logger.info("Protocol executing command: " + String.join(" ", command));
 		builder = builder.directory(new File(dockerComposeDirectory));

@@ -67,6 +67,7 @@ import org.testar.monkey.ConfigTags;
 import org.testar.monkey.Settings;
 import org.testar.instrumentation.InstrumentationInterface;
 import org.testar.instrumentation.InstrumentationWebUtils;
+import org.testar.instrumentation.TweakedWebInstrumentationInterface;
 import org.testar.instrumentation.WebInstrumentationInterface;
 
 /*
@@ -148,7 +149,7 @@ public class CodeAnalysisWebdriverProtocol extends DockerizedSUTWebdriverProtoco
 
         super.initialize(settings);
 
-        this.instrumentationInterface = new WebInstrumentationInterface(applicationBaseURL, codeAnalysisDebugMessages);
+        this.instrumentationInterface = new TweakedWebInstrumentationInterface(applicationBaseURL, codeAnalysisDebugMessages, dockerComposeDirectory, this);
 	}
 
     @Override
