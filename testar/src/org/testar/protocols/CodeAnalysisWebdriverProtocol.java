@@ -236,7 +236,7 @@ public class CodeAnalysisWebdriverProtocol extends DockerizedSUTWebdriverProtoco
         logger.info("Sequence " + String.valueOf(sequenceNumber ) + " finishing.");
 
         if ( settings.get(ConfigTags.CarryOverCoverage) || settings.get(ConfigTags.ExportCoverage ) ) {
-            coverageData = instrumentationInterface.exportCoverage();
+            coverageData = instrumentationInterface.clearLogDataExportCoverage();
             if (coverageData == null ) {
                 logger.error("Failed to export coverage data at end of sequence.");
             }
