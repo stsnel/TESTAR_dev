@@ -207,6 +207,7 @@ MaxInputStrings = 5
 LogOracleEnabled = true
 LogOracleCommands = /data/studie/af/lightweight-codeanalysis/suts/indico/run/save-logs.sh
 LogOracleFiles    = /data/studie/af/lightweight-codeanalysis/suts/indico/run/indico.log
+LogOracleRegex = ".*(?<!psql: )([Ee]xception|[Ee]rror|[Vv]iolation).*"
 
 ResetSUTAfterSequence = true
 VolumesToResetAfterSequence = indicocontainers_customization;indicocontainers_static-files;indicoplain_archive;indicoplain_customization;indicoplain_static-files;indicocontainers_archive
