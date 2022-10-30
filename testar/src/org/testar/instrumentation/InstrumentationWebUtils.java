@@ -32,6 +32,7 @@ public class InstrumentationWebUtils {
      */
     public static boolean waitForURL(String urlString, int maxWaitTime, int timeout, int retryTime, int expectedStatusCode) {
         Logger logger = LogManager.getLogger();
+	logger.info("Wait for URL: " + urlString);
         long beginTime = System.currentTimeMillis() / 1000L;
         long currentTime = beginTime;
         while ( ( currentTime = System.currentTimeMillis() / 1000L ) < ( beginTime + maxWaitTime) ) {
