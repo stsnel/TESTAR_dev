@@ -155,11 +155,9 @@ public class CodeAnalysisWebdriverProtocol extends DockerizedSUTWebdriverProtoco
     @Override
 	protected SUT startSystem() throws SystemStartException {
         SUT sut = super.startSystem();
+	waitForSUT();
         if ( this.instrumentationEnabled && this.setCoverageContext ) {
             instrumentationInterface.setCoverageContext(this.coverageContext);
-        }
-        else {
-            waitForSUT();
         }
         return sut;
 	}
