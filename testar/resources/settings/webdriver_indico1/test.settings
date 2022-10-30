@@ -210,7 +210,7 @@ LogOracleFiles    = /data/studie/af/lightweight-codeanalysis/suts/indico/run/ind
 LogOracleRegex = ".*(?<!psql: )([Ee]xception|[Ee]rror|[Vv]iolation).*"
 
 ResetSUTAfterSequence = true
-VolumesToResetAfterSequence = indicocontainers_customization;indicocontainers_static-files;indicoplain_archive;indicoplain_customization;indicoplain_static-files;indicocontainers_archive
+VolumesToResetAfterSequence = run_archive;run_coverage;run_customization;run_static-files
 
 ProcessDataAfterAction = false
 CarryOverCoverage = false
