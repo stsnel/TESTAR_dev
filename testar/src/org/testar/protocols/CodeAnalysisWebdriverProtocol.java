@@ -164,7 +164,7 @@ public class CodeAnalysisWebdriverProtocol extends DockerizedSUTWebdriverProtoco
         return sut;
 	}
 
-    private void waitForSUT() {
+    protected void waitForSUT() {
         if (codeAnalysisDebugMessages) {
             logger.info("Code analysis before wait for SUT.");
         }
