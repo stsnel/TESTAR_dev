@@ -167,10 +167,6 @@ public class Protocol_webdriver_indico1 extends CodeAnalysisWebdriverProtocol {
             logger.info("Failed waiting for SUT to be ready ...");
         }
 
-        if (! InstrumentationWebUtils.waitForURL(applicationBaseURL + "/testar-registertester", 60, 10,  1, 200) )  {
-            logger.info("Register tester not ready ...");
-        }
-
         if (codeAnalysisDebugMessages) {
             logger.info("Indico protocol after wait for SUT.");
         }
@@ -187,30 +183,32 @@ public class Protocol_webdriver_indico1 extends CodeAnalysisWebdriverProtocol {
         }
     }
 
-	@Override
-	protected void finishSequence(){
-			super.finishSequence();
-			logger.info("End sequence @ " + String.valueOf(System.currentTimeMillis()));
-	}
+    @Override
+    protected void finishSequence(){
+        super.finishSequence();
+	logger.info("End sequence @ " + String.valueOf(System.currentTimeMillis()));
+    }
 
-	@Override
-	protected void initTestSession() {
-		logger.info("Begin experiment (TS) @ " + String.valueOf(System.currentTimeMillis()));
-		super.initTestSession();
-	}
+    @Override
+    protected void initTestSession() {
+	logger.info("Begin experiment (TS) @ " + String.valueOf(System.currentTimeMillis()));
+	super.initTestSession();
+    }
 
-	@Override
-	protected void closeTestSession() {
-		super.closeTestSession();
-		logger.info("End experiment (TS) @ " + String.valueOf(System.currentTimeMillis()));
-	}
-
-
+    @Override
+    protected void closeTestSession() {
+ 	super.closeTestSession();
+	logger.info("End experiment (TS) @ " + String.valueOf(System.currentTimeMillis()));
+    }
 
     protected void loginSUT(SUT system, State state) {
-  		waitLeftClickAndTypeIntoWidgetWithMatchingTag("name","identifier", this.applicationUsername, state, system, 3, 1.0);
-  		waitLeftClickAndTypeIntoWidgetWithMatchingTag("name","password", this.applicationPassword, state, system, 3, 1.0);
-  		waitAndLeftClickWidgetWithMatchingTag("name", "Login with Indico", state, system, 3, 1.0);
+        if (! InstrumentationWebUtils.waitForURL(applicationBaseURL + "/testar-registertester", 60, 10,  1, 200) )  {
+            logger.info("Register tester not ready ...");
+        }
+
+  	waitLeftClickAndTypeIntoWidgetWithMatchingTag("name","identifier", this.applicationUsername, state, system, 3, 1.0);
+  	waitLeftClickAndTypeIntoWidgetWithMatchingTag("name","password", this.applicationPassword, state, system, 3, 1.0);
+  	waitAndLeftClickWidgetWithMatchingTag("name", "Login with Indico", state, system, 3, 1.0);
     }
 
 
