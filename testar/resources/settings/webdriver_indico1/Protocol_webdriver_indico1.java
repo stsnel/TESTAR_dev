@@ -157,18 +157,24 @@ public class Protocol_webdriver_indico1 extends CodeAnalysisWebdriverProtocol {
         return super.startSystem();
     }
 
+    @Override
     protected void waitForSUT() {
         if (codeAnalysisDebugMessages) {
             logger.info("Indico protocol before wait for SUT.");
         }
-                if (! InstrumentationWebUtils.waitForURL(applicationBaseURL + "/testar-registertester", 60, 5,  1, 200) )  {
-                        logger.info("Register tester not ready ...");
-                }
+
+        if (! InstrumentationWebUtils.waitForURL(applicationBaseURL + "/bootstrap", 300, 10,  1, 200) )  {
+            logger.info("Failed waiting for SUT to be ready ...");
+        }
+
+        if (! InstrumentationWebUtils.waitForURL(applicationBaseURL + "/testar-registertester", 60, 10,  1, 200) )  {
+            logger.info("Register tester not ready ...");
+        }
 
         if (codeAnalysisDebugMessages) {
             logger.info("Indico protocol after wait for SUT.");
         }
-        }
+    }
 
 
     @Override
